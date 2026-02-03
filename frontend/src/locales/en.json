@@ -1,0 +1,68 @@
+{
+  "app": {
+    "name": "Prompt Manager"
+  },
+  "user": {
+    "profile": "Profile"
+  },
+  "settings": {
+    "title": "Settings"
+  },
+  "auth": {
+    "logout": "Log out"
+  },
+  "welcome": "Welcome to Svelte App",
+  "greeting": "Hello, {username}!",
+  "mode": {
+    "published": "Published",
+    "draft": "Draft",
+    "developing": "Developing"
+  },
+  "prompt": {
+    "title": "Prompts",
+    "list": "Prompt List",
+    "create": "Create Prompt",
+    "edit": "Edit",
+    "delete": "Delete",
+    "name": "Name",
+    "path": "Path",
+    "version": "Version",
+    "status": "Status",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At",
+    "createdBy": "Created By",
+    "noPrompts": "No prompts yet",
+    "createFirst": "Create your first prompt to get started",
+    "loading": "Loading prompts...",
+    "published": "Published",
+    "unpublished": "Unpublished",
+    "deleteConfirm": "Are you sure you want to delete this prompt?"
+  },
+  "version": {
+    "title": "Versions",
+    "create": "Create Version",
+    "edit": "Edit Version",
+    "delete": "Delete Version",
+    "version": "Version",
+    "content": "Content",
+    "changeLog": "Change Log",
+    "variables": "Variables",
+    "publish": "Publish",
+    "unpublish": "Unpublish",
+    "latest": "Latest",
+    "noVersions": "No versions yet",
+    "createFirst": "Create your first version"
+  },
+  "action": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "search": "Search",
+    "actions": "Actions"
+  },
+  "sidebar": {
+    "favorites": "Favorites",
+    "recent": "Recent",
+    "all": "All Prompts"
+  }
+}
