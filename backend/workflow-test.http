@@ -1,0 +1,303 @@
+
+// ============================================
+// Complete Workflow Example
+// ============================================
+
+// 1. Create User
+# Create a user first
+POST http://localhost:8080/api/v1/user/create
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "nickname": "管理员",
+  "department": "技术部"
+}
+
+> {%
+    client.global.set("userId", response.body.data.id)
+%}
+
+###
+
+// ============================================
+// Category Workflow
+// ============================================
+
+// 2. Create Category
+# Create a category for prompts
+POST http://localhost:8080/api/v1/category/create
+Content-Type: application/json
+
+{
+  "id": " copywriting",
+  "title": "文案生成",
+  "icon": "file",
+  "url": "/category/copywriting"
+}
+
+> {%
+    client.global.set("categoryId", response.body.data.id)
+%}
+
+###
+
+// ============================================
+// Prompt Workflow
+// ============================================
+
+// 3. Create Prompt with Category
+# Create a prompt and assign to category
+POST http://localhost:8080/api/v1/prompt/create
+Content-Type: application/json
+
+{
+  "name": "文案生成助手",
+  "createdBy": "admin",
+  "username": "管理员",
+  "path": "/text-generate",
+  "category": "1"
+}
+
+> {%
+    client.global.set("promptId", response.body.data.id)
+%}
+
+###
+
+// ============================================
+// Favorites Workflow
+// ============================================
+
+// 4. Add to Favorites
+# Add the prompt to user's favorites
+POST http://localhost:8080/api/v1/favorites/add
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "promptId": "{{promptId}}"
+}
+
+###
+
+// ============================================
+
+// 5. Check if Favorited
+# Verify the prompt is in favorites
+POST http://localhost:8080/api/v1/favorites/check
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "promptId": "{{promptId}}"
+}
+
+###
+
+// ============================================
+
+// 6. List Favorites
+# Get list of favorite prompts
+GET http://localhost:8080/api/v1/favorites/list?userId=1
+
+// ============================================
+// Recently Used Workflow
+// ============================================
+
+###
+
+// 7. Record First Usage
+# Record first usage of the prompt
+POST http://localhost:8080/api/v1/recently-used/record
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "promptId": "{{promptId}}"
+}
+
+###
+
+// ============================================
+
+// 8. Record Second Usage
+# Record second usage (updates timestamp)
+POST http://localhost:8080/api/v1/recently-used/record
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "promptId": "{{promptId}}"
+}
+
+###
+
+// ============================================
+
+// 9. List Recently Used
+# Get recently used prompts
+GET http://localhost:8080/api/v1/recently-used/list?userId=1&limit=10
+
+// ============================================
+// Prompt Version Workflow
+// ============================================
+
+// 10. Create Prompt Version (Publish)
+# Create and publish first version
+POST http://localhost:8080/api/v1/version/create
+Content-Type: application/json
+
+{
+  "promptId": "{{promptId}}",
+  "version": "1.0.0",
+  "content": "你是一个专业的文案生成助手，请根据用户提供的信息生成吸引人的文案。",
+  "variables": "[\"topic\", \"tone\"]",
+  "changeLog": "初始发布版本",
+  "createdBy": "admin",
+  "username": "管理员",
+  "isPublish": true
+}
+
+> {%
+    client.global.set("versionId", response.body.data.id)
+%}
+
+###
+
+// 11. Get Prompt Content
+# Get published prompt with version details
+GET http://localhost:8080/api/v1/prompt/content/text-generate
+
+###
+
+// ============================================
+
+// 12. Create New Version
+# Create a new version
+POST http://localhost:8080/api/v1/version/create
+Content-Type: application/json
+
+{
+  "promptId": "{{promptId}}",
+  "version": "1.1.0",
+  "content": "你是一个专业的文案生成助手，请根据用户提供的信息生成吸引人的文案。\n请确保文案简洁有力，突出产品卖点。",
+  "variables": "[\"topic\", \"tone\", \"audience\"]",
+  "changeLog": "优化提示词，增加受众分析",
+  "createdBy": "admin",
+  "username": "管理员",
+  "isPublish": true
+}
+
+###
+
+// ============================================
+
+// 13. Get Latest Version
+# Get the latest published version
+GET http://localhost:8080/api/v1/version/prompt/{{promptId}}/latest
+
+###
+
+// ============================================
+
+// 14. List All Versions
+# List all versions of this prompt
+GET http://localhost:8080/api/v1/version/prompt/{{promptId}}
+
+###
+
+// ============================================
+// Category Management
+// ============================================
+
+// 15. List Categories
+# List all available categories
+GET http://localhost:8080/api/v1/category/list
+
+// ============================================
+
+###
+
+// 16. Update Category
+# Update category information
+POST http://localhost:8080/api/v1/category/update
+Content-Type: application/json
+
+{
+  "id": "1",
+  "title": "文案创作",
+  "icon": "edit",
+  "count": 10,
+  "url": "/category/writing"
+}
+
+
+###
+
+// ============================================
+// Cleanup Operations
+// ============================================
+
+// 17. Remove from Favorites
+# Remove from favorites
+POST http://localhost:8080/api/v1/favorites/remove
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "promptId": "{{promptId}}"
+}
+
+###
+
+// ============================================
+
+// 18. Remove from Recently Used
+# Remove from recently used
+POST http://localhost:8080/api/v1/recently-used/remove
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "promptId": "{{promptId}}"
+}
+
+###
+
+// ============================================
+
+// 19. Clean Old Records
+# Clean old recently used records, keep only 20
+POST http://localhost:8080/api/v1/recently-used/clean
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "keepCount": 20
+}
+
+###
+
+// ============================================
+
+// 20. Verify Favorites
+# Verify prompt is removed from favorites
+POST http://localhost:8080/api/v1/favorites/check
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "promptId": "{{promptId}}"
+}
+
+###
+
+// ============================================
+
+// 21. Final List Recently Used
+# Verify recently used list
+GET http://localhost:8080/api/v1/recently-used/list?userId=1&limit=10
+
+###
+

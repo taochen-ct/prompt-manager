@@ -1,0 +1,285 @@
+// API Test Requests
+// Base URL: http://localhost:8080
+// API Prefix: /api/v1
+
+// ============================================
+// Base API
+// ============================================
+
+// Ping
+GET http://localhost:8080/api/v1/ping
+
+// ============================================
+// User API
+// ============================================
+
+###
+
+// Create User
+POST http://localhost:8080/api/v1/user/create
+Content-Type: application/json
+
+{
+  "username": "test_user",
+  "nickname": "测试用户",
+  "department": "技术部"
+}
+> {%
+  client.global.set("user_id", response.body.data.id);
+%}
+
+// ============================================
+// Category API
+// ============================================
+
+###
+
+// Create Category
+POST http://localhost:8080/api/v1/category/create
+Content-Type: application/json
+
+{
+  "id": "5",
+  "title": "数据分析",
+  "icon": "chart",
+  "url": "/category/analysis"
+}
+> {%
+  client.global.set("category_id", response.body.data.id);
+%}
+
+###
+
+// Get Category by ID
+GET http://localhost:8080/api/v1/category/info/{{category_id}}
+
+###
+
+// List Categories
+GET http://localhost:8080/api/v1/category/list
+
+###
+
+// Update Category
+POST http://localhost:8080/api/v1/category/update
+Content-Type: application/json
+
+{
+  "id": "{{category_id}}",
+  "title": "数据挖掘",
+  "icon": "database",
+  "count": 10,
+  "url": "/category/data-mining"
+}
+
+###
+
+// Delete Category
+POST http://localhost:8080/api/v1/category/delete/{{category_id}}
+
+// ============================================
+// Prompt API
+// ============================================
+
+###
+
+// Create Prompt
+POST http://localhost:8080/api/v1/prompt/create
+Content-Type: application/json
+
+{
+  "name": "我的提示词",
+  "createdBy": "user123",
+  "username": "测试用户",
+  "path": "/api-test",
+  "category": "1"
+}
+> {%
+  client.global.set("prompt_id", response.body.data.id);
+  client.global.set("prompt_path", response.body.data.path);
+%}
+
+###
+
+// Get Prompt by ID
+GET http://localhost:8080/api/v1/prompt/info/{{prompt_id}}
+
+###
+
+// Get Prompt Content (published version)
+GET http://localhost:8080/api/v1/prompt/content{{prompt_path}}
+
+###
+
+// Update Prompt
+POST http://localhost:8080/api/v1/prompt/update
+Content-Type: application/json
+
+{
+  "id": "{{prompt_id}}",
+  "name": "更新后的提示词",
+  "isPublish": false,
+  "category": "2"
+}
+
+###
+
+// Delete Prompt
+POST http://localhost:8080/api/v1/prompt/delete/{{prompt_id}}
+
+###
+
+// List Prompts
+GET http://localhost:8080/api/v1/prompt/list?offset=0&limit=10
+
+// ============================================
+// Favorites API
+// ============================================
+
+###
+
+// Add to Favorites
+POST http://localhost:8080/api/v1/favorites/add
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "promptId": "77a11fe2-3df0-4bef-bd0f-cbe1203fdef6"
+}
+
+###
+
+// Check if Favorite
+POST http://localhost:8080/api/v1/favorites/check
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "promptId": "77a11fe2-3df0-4bef-bd0f-cbe1203fdef6"
+}
+
+###
+
+// List Favorites
+GET http://localhost:8080/api/v1/favorites/list?userId=1
+
+###
+
+// Remove from Favorites
+POST http://localhost:8080/api/v1/favorites/remove
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "promptId": "77a11fe2-3df0-4bef-bd0f-cbe1203fdef6"
+}
+
+// ============================================
+// Recently Used API
+// ============================================
+
+###
+
+// Record Usage
+POST http://localhost:8080/api/v1/recently-used/record
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "promptId": "77a11fe2-3df0-4bef-bd0f-cbe1203fdef6"
+}
+
+###
+
+// List Recently Used
+GET http://localhost:8080/api/v1/recently-used/list?userId=1&limit=10
+
+###
+
+// Remove from Recently Used
+POST http://localhost:8080/api/v1/recently-used/remove
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "promptId": "77a11fe2-3df0-4bef-bd0f-cbe1203fdef6"
+}
+
+###
+
+// Clean Old Records
+POST http://localhost:8080/api/v1/recently-used/clean
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "keepCount": 20
+}
+
+// ============================================
+// Prompt Version API
+// ============================================
+
+###
+
+// Create Prompt Version
+POST http://localhost:8080/api/v1/version/create
+Content-Type: application/json
+
+{
+  "promptId": "77a11fe2-3df0-4bef-bd0f-cbe1203fdef6",
+  "version": "1.0.1",
+  "content": "这是一个提示词内容",
+  "variables": "[\"name\", \"age\"]",
+  "changeLog": "初始版本",
+  "createdBy": "user123",
+  "username": "测试用户",
+  "isPublish": true
+}
+> {%
+  client.global.set("version_id", response.body.data.id);
+  client.global.set("prompt_id", response.body.data.promptId);
+%}
+
+// ============================================
+
+###
+
+// Get Version by ID
+GET http://localhost:8080/api/v1/version/info/{{version_id}}
+
+###
+
+// Get Versions by Prompt ID
+GET http://localhost:8080/api/v1/version/prompt/{{prompt_id}}
+
+###
+
+// Get Latest Version by Prompt ID
+GET http://localhost:8080/api/v1/version/prompt/{{prompt_id}}/latest
+
+###
+
+// Update Version
+POST http://localhost:8080/api/v1/version/update
+Content-Type: application/json
+
+{
+  "id": "{{version_id}}",
+  "version": "1.0.2",
+  "content": "更新后的提示词内容",
+  "variables": "[\"name\", \"age\", \"city\"]",
+  "changeLog": "修复bug",
+  "isPublish": false
+}
+
+###
+
+// Delete Version
+POST http://localhost:8080/api/v1/version/delete/{{version_id}}
+
+###
+
+// List Versions
+GET http://localhost:8080/api/v1/version/list?offset=0&limit=10
+

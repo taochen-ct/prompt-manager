@@ -1,0 +1,118 @@
+package router
+
+import (
+	"backend/internal/api/handler"
+	"backend/internal/api/middleware"
+	"backend/pkg/common"
+	"backend/pkg/config"
+	"backend/pkg/response"
+	"fmt"
+	"github.com/gin-contrib/static"
+	"github.com/gin-gonic/gin"
+)
+
+func SetupRouter(
+	cfg *config.Config,
+	loggerMiddleware *middleware.Logger,
+	recoveryMiddleware *middleware.Recovery,
+	corsMiddleware *middleware.Cors,
+	userHandler *handler.UserHandler,
+	promptHandler *handler.PromptHandler,
+	versionHandler *handler.PromptVersionHandler,
+	categoryHandler *handler.CategoryHandler,
+	favoriteHandler *handler.FavoriteHandler,
+	recentlyUsedHandler *handler.RecentlyUsedHandler,
+) *gin.Engine {
+	if cfg.Server.Env == "prod" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	r := gin.New()
+
+	// 全局中间件
+	r.Use(
+		gin.Logger(),
+		loggerMiddleware.Handler(),
+		corsMiddleware.Handler(),
+		recoveryMiddleware.Handler(),
+	)
+	// website server
+	if common.IsExist(cfg.Web.StaticDir) {
+		r.Use(static.Serve("/", static.LocalFile(cfg.Web.StaticDir, false)))
+		r.NoRoute(func(c *gin.Context) {
+			c.File(fmt.Sprintf("%s/%s", cfg.Web.StaticDir, cfg.Web.DefaultHtml))
+		})
+	}
+
+	// base api
+	api := r.Group(cfg.Server.ApiPrefix)
+	{
+		api.GET("/ping", func(c *gin.Context) {
+			response.Success(c, "pong")
+		})
+	}
+
+	// user api collections
+	userAPI := api.Group("/user")
+	{
+		userAPI.POST("/create", userHandler.CreateUser)
+		userAPI.POST("/delete", userHandler.DeleteUser)
+		userAPI.GET("/info/:id", userHandler.GetUser)
+		userAPI.POST("/update/:id", userHandler.UpdateUser)
+	}
+
+	// prompt api collections
+	promptAPI := api.Group("/prompt")
+	{
+		promptAPI.POST("/create", promptHandler.Create)
+		promptAPI.GET("/info/:id", promptHandler.GetPromptByID)
+		promptAPI.GET("/content/*path", promptHandler.GetPromptByPath)
+		promptAPI.POST("/update", promptHandler.Update)
+		promptAPI.POST("/delete/:id", promptHandler.Delete)
+		promptAPI.GET("/list", promptHandler.List)
+	}
+
+	// prompt version api collections
+	versionAPI := api.Group("/version")
+	{
+		versionAPI.POST("/create", versionHandler.Create)
+		versionAPI.GET("/info/:id", versionHandler.GetByID)
+		versionAPI.GET("/prompt/:promptId", versionHandler.GetByPromptID)
+		versionAPI.GET("/prompt/:promptId/latest", versionHandler.GetLatestByPromptID)
+		versionAPI.POST("/update", versionHandler.Update)
+		versionAPI.POST("/delete/:id", versionHandler.Delete)
+		versionAPI.GET("/list", versionHandler.List)
+	}
+
+	// category api collections
+	categoryAPI := api.Group("/category")
+	{
+		categoryAPI.POST("/create", categoryHandler.Create)
+		categoryAPI.GET("/info/:id", categoryHandler.GetByID)
+		categoryAPI.GET("/list", categoryHandler.List)
+		categoryAPI.POST("/update", categoryHandler.Update)
+		categoryAPI.POST("/delete/:id", categoryHandler.Delete)
+	}
+
+	// favorites api collections
+	favoritesAPI := api.Group("/favorites")
+	{
+		favoritesAPI.POST("/add", favoriteHandler.Add)
+		favoritesAPI.POST("/remove", favoriteHandler.Remove)
+		favoritesAPI.POST("/check", favoriteHandler.Check)
+		favoritesAPI.GET("/list", favoriteHandler.List)
+	}
+
+	// recently used api collections
+	recentlyUsedAPI := api.Group("/recently-used")
+	{
+		recentlyUsedAPI.POST("/record", recentlyUsedHandler.Record)
+		recentlyUsedAPI.POST("/remove", recentlyUsedHandler.Remove)
+		recentlyUsedAPI.GET("/list", recentlyUsedHandler.List)
+		recentlyUsedAPI.POST("/clean", recentlyUsedHandler.Clean)
+	}
+
+	// ...
+
+	return r
+}
