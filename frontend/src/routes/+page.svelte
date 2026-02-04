@@ -1,25 +1,14 @@
 <script lang="ts">
   import { t } from 'svelte-i18n';
   import { toast } from 'svelte-sonner';
-  import { api } from '$lib/services/api';
+  import { api} from '$lib/services/api';
+  import type {Prompt, PromptList} from "$lib/services/api";
   import { Button } from '$lib/components/ui/button';
   import { Input } from '$lib/components/ui/input';
   import * as Dialog from '$lib/components/ui/dialog';
   import PromptTable from '$lib/components/PromptTable.svelte';
   import { Plus, Search } from 'lucide-svelte';
 
-  interface Prompt {
-    id: string;
-    name: string;
-    path: string;
-    latestVersion: string;
-    isPublish: boolean;
-    createBy: string;
-    username: string;
-    createAt: string;
-    updateAt: string;
-    isFavorite?: boolean;
-  }
 
   let prompts = $state<Prompt[]>([]);
   let loading = $state(true);
@@ -29,7 +18,8 @@
     try {
       loading = true;
       const data = await api.getPromptList({ offset: 0, limit: 100 });
-      prompts = data as Prompt[];
+      prompts = data.list as Prompt[];
+      console.log(prompts);
     } catch (error) {
       console.error('Failed to load prompts:', error);
       toast.error($t('action.confirm') as string, {

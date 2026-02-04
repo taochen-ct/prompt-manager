@@ -12,8 +12,10 @@
   import Header from "$lib/components/Header.svelte";
   import type {LayoutData} from './$types';
   import type {Snippet} from "svelte";
+  import {page} from '$app/state';
 
   let {data, children}: { data: LayoutData, children: Snippet } = $props();
+  let isLoginPage = $derived(page.url.pathname === '/login');
 </script>
 
 <svelte:head>
@@ -25,13 +27,17 @@
     <p>Loading language...</p>
   </div>
 {:then}
-  <Sidebar.Provider>
-    <Toaster/>
-    <ModeWatcher/>
-    <AppSidebar />
-    <Sidebar.Inset>
-      <Header />
-      {@render children()}
-    </Sidebar.Inset>
-  </Sidebar.Provider>
+  {#if !isLoginPage}
+    <Sidebar.Provider>
+      <Toaster/>
+      <ModeWatcher/>
+      <AppSidebar/>
+      <Sidebar.Inset>
+        <Header/>
+        {@render children()}
+      </Sidebar.Inset>
+    </Sidebar.Provider>
+  {:else}
+    {@render children()}
+  {/if}
 {/await}

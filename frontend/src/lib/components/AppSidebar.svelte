@@ -32,7 +32,7 @@
   import * as Dialog from '$lib/components/ui/dialog';
   import * as Collapsible from "$lib/components/ui/collapsible/index.js";
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
-  import {api} from "$lib/services/api";
+  import {api, auth} from "$lib/services/api";
   import {toast} from "svelte-sonner";
 
   interface Props {
@@ -46,6 +46,22 @@
     createdBy: 'user-1',
     username: 'Admin'
   });
+
+  // Auth state
+  let isLoggedIn = $state(auth.isLoggedIn());
+  let currentUser = $state(auth.getUser());
+
+  async function handleLogout() {
+    try {
+      await api.logout();
+      toast.success('Logged out successfully');
+    } catch (error) {
+      // Ignore logout errors
+    }
+    isLoggedIn = auth.isLoggedIn();
+    currentUser = auth.getUser();
+    await goto('/login');
+  }
 
 
   let promptCategories = $state([
@@ -191,37 +207,50 @@
   </Sidebar.Content>
 
   <Sidebar.Footer>
-    <Sidebar.Menu>
-      <Sidebar.MenuItem>
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger>
-            {#snippet child({props})}
-              <Sidebar.MenuButton
-                  {...props}
-                  class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-              >
-                <div class="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <span class="text-xs font-medium">A</span>
-                </div>
-                <span class="font-medium">管理员</span>
-                <ChevronUp class="ms-auto h-4 w-4"/>
-              </Sidebar.MenuButton>
-            {/snippet}
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Content side="top" class="w-(--bits-dropdown-menu-anchor-width)">
-            <DropdownMenu.Item>
-              <span>{$t('user.profile')}</span>
-            </DropdownMenu.Item>
-            <DropdownMenu.Item>
-              <span>{$t('settings.title')}</span>
-            </DropdownMenu.Item>
-            <DropdownMenu.Separator/>
-            <DropdownMenu.Item class="text-destructive">
-              <span>{$t('auth.logout')}</span>
-            </DropdownMenu.Item>
-          </DropdownMenu.Content>
-        </DropdownMenu.Root>
-      </Sidebar.MenuItem>
-    </Sidebar.Menu>
+    {#if isLoggedIn && currentUser}
+      <Sidebar.Menu>
+        <Sidebar.MenuItem>
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger>
+              {#snippet child({props})}
+                <Sidebar.MenuButton
+                    {...props}
+                    class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                >
+                  <div class="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <span class="text-xs font-medium">{currentUser?.nickname?.charAt(0) || currentUser?.username?.charAt(0) || 'U'}</span>
+                  </div>
+                  <span class="font-medium">{currentUser?.nickname || currentUser?.username}</span>
+                  <ChevronUp class="ms-auto h-4 w-4"/>
+                </Sidebar.MenuButton>
+              {/snippet}
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Content side="top" class="w-(--bits-dropdown-menu-anchor-width)">
+              <DropdownMenu.Item>
+                <span>{$t('user.profile')}</span>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item>
+                <span>{$t('settings.title')}</span>
+              </DropdownMenu.Item>
+              <DropdownMenu.Separator/>
+              <DropdownMenu.Item class="text-destructive" onclick={handleLogout}>
+                <span>{$t('auth.logout')}</span>
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Root>
+        </Sidebar.MenuItem>
+      </Sidebar.Menu>
+    {:else}
+      <Sidebar.Menu>
+        <Sidebar.MenuItem>
+          <a href="/login" class="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
+            <div class="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <span class="text-xs font-medium">?</span>
+            </div>
+            <span class="font-medium">Login</span>
+          </a>
+        </Sidebar.MenuItem>
+      </Sidebar.Menu>
+    {/if}
   </Sidebar.Footer>
 </Sidebar.Root>

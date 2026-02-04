@@ -1,24 +1,115 @@
 const API_BASE = 'http://localhost:8080/api/v1';
 
-interface ApiResponse<T> {
+export interface ApiResponse<T> {
   code: number;
   data: T;
   message: string;
 }
 
+// Auth Service - Token Management
+export interface UserInfo {
+  username: string;
+  nickname: string;
+  id?: string;
+}
+
+export interface Prompt {
+  id: string;
+  name: string;
+  path: string;
+  latestVersion: string;
+  isPublish: boolean;
+  createBy: string;
+  username: string;
+  createAt: string;
+  updateAt: string;
+  isFavorite?: boolean;
+}
+
+export interface PromptList{
+  list: Prompt[];
+  page: number;
+  total: number;
+  limit: number;
+}
+
+export const auth = {
+  getToken(): string | null {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('auth_token');
+    }
+    return null;
+  },
+
+  setToken(token: string): void {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auth_token', token);
+    }
+  },
+
+  clearToken(): void {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('auth_token');
+    }
+  },
+
+  isLoggedIn(): boolean {
+    return !!this.getToken();
+  },
+
+  getUser(): UserInfo | null {
+    if (typeof window !== 'undefined') {
+      const userStr = localStorage.getItem('auth_user');
+      if (userStr) {
+        return JSON.parse(userStr)
+      }
+      return null;
+    }
+    return null;
+  },
+
+  setUser(user: UserInfo): void {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auth_user', JSON.stringify(user));
+    }
+  },
+
+  clearUser(): void {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('auth_user');
+    }
+  },
+
+  clearAll(): void {
+    this.clearToken();
+    this.clearUser();
+  }
+};
+
+// Endpoints that don't require authorization
+const PUBLIC_ENDPOINTS = ['/user/login', '/user/create', '/ping'];
+
 class ApiService {
   private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
+      endpoint: string,
+      options: RequestInit = {}
   ): Promise<T> {
     const url = `${API_BASE}${endpoint}`;
 
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...options.headers as Record<string, string>,
+    };
+
+    // Add Authorization header if not a public endpoint
+    const token = auth.getToken();
+    if (token && !PUBLIC_ENDPOINTS.some(p => endpoint.startsWith(p))) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(url, {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
+      headers,
     });
 
     const result: ApiResponse<T> = await response.json();
@@ -31,8 +122,35 @@ class ApiService {
   }
 
   // User APIs
+  async login(data: { username: string; password: string }) {
+    const result = await this.request<{ token: string; user: UserInfo; expireAt: string }>('/user/login', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    // Save token and user info
+    auth.setToken(result.token);
+    auth.setUser(result.user);
+    return result;
+  }
+
+  async logout() {
+    const user = auth.getUser();
+    if (user) {
+      try {
+        await this.request('/user/logout', {
+          method: 'POST',
+          body: JSON.stringify({username: user.username}),
+        });
+      } catch (e) {
+        // Ignore logout error, still clear local data
+      }
+    }
+    auth.clearAll();
+  }
+
   async createUser(data: {
     username: string;
+    password: string;
     nickname?: string;
     department?: string;
   }) {
@@ -56,7 +174,7 @@ class ApiService {
   async deleteUser(id: string) {
     return this.request('/user/delete', {
       method: 'POST',
-      body: JSON.stringify({ id }),
+      body: JSON.stringify({id}),
     });
   }
 
@@ -66,6 +184,7 @@ class ApiService {
     createdBy: string;
     username: string;
     path?: string;
+    category?: string;
   }) {
     return this.request('/prompt/create', {
       method: 'POST',
@@ -88,6 +207,7 @@ class ApiService {
     id: string;
     name: string;
     isPublish?: boolean;
+    category?: string;
   }) {
     return this.request('/prompt/update', {
       method: 'POST',
@@ -101,12 +221,14 @@ class ApiService {
     });
   }
 
-  async getPromptList(params: { offset?: number; limit?: number } = {}) {
+  async getPromptList(params: { offset?: number; limit?: number }): Promise<PromptList> {
+
     const query = new URLSearchParams();
+    query.set('username', auth.getUser()?.username as string);
     if (params.offset !== undefined) query.set('offset', params.offset.toString());
     if (params.limit !== undefined) query.set('limit', params.limit.toString());
 
-    const endpoint = `/prompt/list${query.toString() ? `?${query.toString()}` : ''}`;
+    const endpoint = `/prompt/list?${query.toString()}`;
     return this.request(endpoint);
   }
 
@@ -168,65 +290,116 @@ class ApiService {
     return this.request(endpoint);
   }
 
-  // Favorites APIs (模拟数据)
-  private favorites: string[] = [];
-
-  async getFavorites(): Promise<any[]> {
-    const allPrompts = await this.getPromptList({ offset: 0, limit: 100 }) as any[];
-    return allPrompts.filter(p => this.favorites.includes(p.id)).map(p => ({
-      ...p,
-      isFavorite: true
-    }));
+  // Favorites APIs
+  async addFavorite(data: { promptId: string }) {
+    return this.request('/favorites/add', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
-  async toggleFavorite(promptId: string): Promise<boolean> {
-    const index = this.favorites.indexOf(promptId);
-    if (index > -1) {
-      this.favorites.splice(index, 1);
-      return false;
-    } else {
-      this.favorites.push(promptId);
-      return true;
-    }
+  async removeFavorite(data: { promptId: string }) {
+    return this.request('/favorites/remove', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
-  async isFavorite(promptId: string): Promise<boolean> {
-    return this.favorites.includes(promptId);
+  async checkFavorite(data: { promptId: string }) {
+    return this.request('/favorites/check', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
-  // Recent APIs (模拟数据，存储最近访问的prompt)
-  private recentPrompts: { id: string; timestamp: number }[] = [];
+  async getFavoritesList(params: { offset?: number; limit?: number } = {}) {
+    const query = new URLSearchParams();
+    if (params.offset !== undefined) query.set('offset', params.offset.toString());
+    if (params.limit !== undefined) query.set('limit', params.limit.toString());
 
-  async getRecentPrompts(limit: number = 10): Promise<any[]> {
-    const allPrompts = await this.getPromptList({ offset: 0, limit: 100 }) as any[];
-    const recentIds = this.recentPrompts
-      .sort((a, b) => b.timestamp - a.timestamp)
-      .slice(0, limit)
-      .map(r => r.id);
-
-    return recentIds
-      .map(id => allPrompts.find(p => p.id === id))
-      .filter(Boolean);
+    const endpoint = `/favorites/list${query.toString() ? `?${query.toString()}` : ''}`;
+    return this.request(endpoint);
   }
 
-  async addToRecent(promptId: string) {
-    const existing = this.recentPrompts.findIndex(r => r.id === promptId);
-    if (existing > -1) {
-      this.recentPrompts.splice(existing, 1);
-    }
-    this.recentPrompts.unshift({ id: promptId, timestamp: Date.now() });
-    // 只保留最近50条
-    if (this.recentPrompts.length > 50) {
-      this.recentPrompts = this.recentPrompts.slice(0, 50);
-    }
+  // Recently Used APIs
+  async recordRecentlyUsed(data: { promptId: string }) {
+    return this.request('/recently-used/record', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
-  // Category APIs (基于path过滤)
+  async getRecentlyUsedList(params: { offset?: number; limit?: number } = {}) {
+    const query = new URLSearchParams();
+    if (params.offset !== undefined) query.set('offset', params.offset.toString());
+    if (params.limit !== undefined) query.set('limit', params.limit.toString());
+
+    const endpoint = `/recently-used/list${query.toString() ? `?${query.toString()}` : ''}`;
+    return this.request(endpoint);
+  }
+
+  async removeRecentlyUsed(data: { promptId: string }) {
+    return this.request('/recently-used/remove', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async cleanRecentlyUsed(data: { keepCount?: number } = {}) {
+    return this.request('/recently-used/clean', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Category APIs
+  async createCategory(data: {
+    id: string;
+    title: string;
+    icon: string;
+    url: string;
+    createdBy: string;
+    username: string;
+  }) {
+    return this.request('/category/create', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getCategory(id: string) {
+    return this.request(`/category/info/${id}`);
+  }
+
+  async getCategoryList() {
+    return this.request('/category/list');
+  }
+
+  async updateCategory(data: {
+    id: string;
+    title: string;
+    icon: string;
+    count?: number;
+    url: string;
+  }) {
+    return this.request('/category/update', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteCategory(id: string) {
+    return this.request(`/category/delete/${id}`, {
+      method: 'POST',
+    });
+  }
+
+  // Category-based queries
   async getPromptsByCategory(category: string): Promise<any[]> {
-    const allPrompts = await this.getPromptList({ offset: 0, limit: 100 }) as any[];
-    return allPrompts.filter(p =>
-      p.path.toLowerCase().includes(category.toLowerCase()) ||
-      p.name.toLowerCase().includes(category.toLowerCase())
+    const allPrompts = await this.getPromptList({ offset: 0, limit: 100});
+    return allPrompts.list.filter(p =>
+        p.path.toLowerCase().includes(category.toLowerCase()) ||
+        p.name.toLowerCase().includes(category.toLowerCase())
     );
   }
 }

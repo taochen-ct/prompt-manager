@@ -2,7 +2,7 @@
 
 ## 概述
 
-Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户、提示词(Prompt)和版本管理功能。
+Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户、提示词(Prompt)、版本管理、分类、收藏夹和最近使用功能。
 
 ## 基础信息
 
@@ -23,7 +23,124 @@ Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户�
 
 ---
 
-## User API
+## Recently Used API (最近使用)
+
+> 需要 JWT 认证（从 Token 中获取用户信息，无需传 userId）
+
+### 记录使用
+
+**接口**: `POST /api/v1/recently-used/record`
+
+**请求参数**:
+
+| 字段 | 类型 | 必填 | 描述 |
+|------|------|------|------|
+| promptId | string | 是 | 提示词ID |
+
+**请求示例**:
+```json
+{
+  "promptId": "77a11fe2-3df0-4bef-bd0f-cbe1203fdef6"
+}
+```
+
+**业务逻辑**:
+- 如果记录已存在，更新使用时间
+- 如果记录不存在，创建新记录
+- 自动清理超过50条旧记录
+
+---
+
+### 最近使用列表
+
+**接口**: `GET /api/v1/recently-used/list`
+
+**查询参数**:
+
+| 字段 | 类型 | 必填 | 描述 |
+|------|------|------|------|
+| offset | int | 否 | 偏移量 (默认0) |
+| limit | int | 否 | 限制数量 (默认10) |
+
+---
+
+### 移除记录
+
+**接口**: `POST /api/v1/recently-used/remove`
+
+**请求参数**:
+
+| 字段 | 类型 | 必填 | 描述 |
+|------|------|------|------|
+| promptId | string | 是 | 提示词ID |
+
+---
+
+### 清理旧记录
+
+**接口**: `POST /api/v1/recently-used/clean`
+
+**请求参数**:
+
+| 字段 | 类型 | 必填 | 描述 |
+|------|------|------|------|
+| keepCount | int | 否 | 保留数量 (默认50) |
+
+**响应参数**:
+
+| 字段 | 类型 | 描述 |
+|------|------|------|
+| token | string | JWT 令牌 |
+| user | object | 用户信息 |
+| expireAt | string | 过期时间 |
+
+**响应示例**:
+```json
+{
+  "code": 0,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "id": "1",
+      "username": "admin",
+      "nickname": "管理员",
+      "department": "技术部"
+    },
+    "expireAt": "2024-01-02 12:00:00"
+  },
+  "message": "success"
+}
+```
+
+---
+
+### 用户登出
+
+**接口**: `POST /api/v1/user/logout`
+
+**请求参数**:
+
+| 字段 | 类型 | 必填 | 描述 |
+|------|------|------|------|
+| username | string | 是 | 用户名 |
+
+**请求示例**:
+```json
+{
+  "username": "admin"
+}
+```
+
+**响应示例**:
+```json
+{
+  "code": 0,
+  "data": null,
+  "message": "success"
+}
+```
+
+---
 
 ### 创建用户
 
@@ -34,6 +151,7 @@ Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户�
 | 字段 | 类型 | 必填 | 描述 |
 |------|------|------|------|
 | username | string | 是 | 用户名 (3-32字符) |
+| password | string | 是 | 密码 (最少6位) |
 | nickname | string | 否 | 昵称 |
 | department | string | 否 | 部门 |
 
@@ -41,6 +159,7 @@ Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户�
 ```json
 {
   "username": "admin",
+  "password": "123456",
   "nickname": "管理员",
   "department": "技术部"
 }
@@ -149,6 +268,335 @@ Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户�
 
 ---
 
+## Category API (分类)
+
+### 创建分类
+
+**接口**: `POST /api/v1/category/create`
+
+**请求参数**:
+
+| 字段 | 类型 | 必填 | 描述 |
+|------|------|------|------|
+| id | string | 是 | 分类ID |
+| title | string | 是 | 分类标题 |
+| icon | string | 是 | 图标名称 |
+| url | string | 是 | 访问路径 |
+| createdBy | string | 是 | 创建者ID |
+| username | string | 是 | 创建者用户名 |
+
+**请求示例**:
+```json
+{
+  "id": "5",
+  "title": "数据分析",
+  "icon": "chart",
+  "url": "/category/analysis",
+  "createdBy": "admin",
+  "username": "管理员"
+}
+```
+
+**响应参数**:
+
+| 字段 | 类型 | 描述 |
+|------|------|------|
+| id | string | 分类ID |
+| title | string | 分类标题 |
+| icon | string | 图标名称 |
+| count | int | 数量 |
+| url | string | 访问路径 |
+| createdBy | string | 创建者ID |
+| username | string | 创建者用户名 |
+| createdAt | string | 创建时间 |
+| updatedAt | string | 更新时间 |
+
+---
+
+### 获取分类
+
+**接口**: `GET /api/v1/category/info/:id`
+
+**路径参数**:
+
+| 字段 | 类型 | 必填 | 描述 |
+|------|------|------|------|
+| id | string | 是 | 分类ID |
+
+---
+
+### 分类列表
+
+**接口**: `GET /api/v1/category/list`
+
+**响应示例**:
+```json
+{
+  "code": 0,
+  "data": [
+    {
+      "id": "1",
+      "title": "文案生成",
+      "icon": "file",
+      "count": 5,
+      "url": "/category/copywriting",
+      "createdAt": "2024-01-01 00:00:00",
+      "updatedAt": "2024-01-01 00:00:00"
+    }
+  ],
+  "message": "success"
+}
+```
+
+---
+
+### 更新分类
+
+**接口**: `POST /api/v1/category/update`
+
+**请求参数**:
+
+| 字段 | 类型 | 必填 | 描述 |
+|------|------|------|------|
+| id | string | 是 | 分类ID |
+| title | string | 是 | 分类标题 |
+| icon | string | 是 | 图标名称 |
+| count | int | 否 | 数量 |
+| url | string | 是 | 访问路径 |
+| createdBy | string | 否 | 创建者ID |
+| username | string | 否 | 创建者用户名 |
+
+**请求示例**:
+```json
+{
+  "id": "5",
+  "title": "数据分析",
+  "icon": "chart",
+  "url": "/category/analysis",
+  "createdBy": "admin",
+  "username": "管理员"
+}
+```
+
+---
+
+### 删除分类
+
+**接口**: `POST /api/v1/category/delete/:id`
+
+**路径参数**:
+
+| 字段 | 类型 | 必填 | 描述 |
+|------|------|------|------|
+| id | string | 是 | 分类ID |
+
+---
+
+## 认证说明
+
+### JWT Token
+
+除以下公开接口外，所有 API 都需要在 Header 中携带 JWT Token：
+
+**公开接口（无需认证）**:
+- `POST /api/v1/user/login` - 用户登录
+- `POST /api/v1/user/create` - 创建用户
+- `GET /api/v1/ping` - 健康检查
+
+**Token 格式**:
+```
+Authorization: Bearer <token>
+```
+
+**Token 包含信息**:
+- `userId` - 用户ID
+- `username` - 用户名
+
+---
+
+## Favorites API (收藏夹)
+
+> 需要 JWT 认证（从 Token 中获取用户信息，无需传 userId）
+
+### 添加收藏
+
+**接口**: `POST /api/v1/favorites/add`
+
+**请求参数**:
+
+| 字段 | 类型 | 必填 | 描述 |
+|------|------|------|------|
+| promptId | string | 是 | 提示词ID |
+
+**请求示例**:
+```json
+{
+  "promptId": "77a11fe2-3df0-4bef-bd0f-cbe1203fdef6"
+}
+```
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 取消收藏
+
+**接口**: `POST /api/v1/favorites/remove`
+
+**请求参数**:
+
+| 字段 | 类型 | 必填 | 描述 |
+|------|------|------|------|
+| promptId | string | 是 | 提示词ID |
+
+---
+
+### 检查是否已收藏
+
+**接口**: `POST /api/v1/favorites/check`
+
+**请求参数**:
+
+| 字段 | 类型 | 必填 | 描述 |
+|------|------|------|------|
+| promptId | string | 是 | 提示词ID |
+
+---
+
+### 收藏列表
+
+**接口**: `GET /api/v1/favorites/list`
+
+**查询参数**:
+
+| 字段 | 类型 | 必填 | 描述 |
+|------|------|------|------|
+| offset | int | 否 | 偏移量 (默认0) |
+| limit | int | 否 | 限制数量 (默认10) |
+
+---
+
+## Recently Used API (最近使用)
+
+> 需要 JWT 认证（从 Token 中获取用户信息，无需传 userId）
+
+### 记录使用
+
+**接口**: `POST /api/v1/recently-used/record`
+
+**请求参数**:
+
+| 字段 | 类型 | 必填 | 描述 |
+|------|------|------|------|
+| promptId | string | 是 | 提示词ID |
+
+**请求示例**:
+```json
+{
+  "promptId": "77a11fe2-3df0-4bef-bd0f-cbe1203fdef6"
+}
+```
+
+**业务逻辑**:
+- 如果记录已存在，更新使用时间
+- 如果记录不存在，创建新记录
+- 自动清理超过50条旧记录
+
+**响应参数**:
+
+| 字段 | 类型 | 描述 |
+|------|------|------|
+| id | string | 记录ID |
+| userId | int64 | 用户ID |
+| promptId | string | 提示词ID |
+| usedAt | string | 使用时间 |
+
+---
+
+### 最近使用列表
+
+**接口**: `GET /api/v1/recently-used/list`
+
+**查询参数**:
+
+| 字段 | 类型 | 必填 | 描述 |
+|------|------|------|------|
+| userId | int64 | 是 | 用户ID |
+| offset | int | 否 | 偏移量 (默认0) |
+| limit | int | 否 | 限制数量 (默认10) |
+
+**统一分页响应结构**:
+```json
+{
+  "code": 0,
+  "data": {
+    "list": [
+      {
+        "id": "xxx-xxx-xxx",
+        "userId": 1,
+        "promptId": "77a11fe2-3df0-4bef-bd0f-cbe1203fdef6",
+        "usedAt": "2024-01-01 12:00:00",
+        "promptName": "文案生成助手",
+        "promptPath": "/copywriting",
+        "latestVersion": "version-xxx",
+        "category": "1"
+      }
+    ],
+    "total": 20,
+    "page": 0,
+    "limit": 10
+  },
+  "message": "success"
+}
+```
+
+---
+
+### 移除记录
+
+**接口**: `POST /api/v1/recently-used/remove`
+
+**请求参数**:
+
+| 字段 | 类型 | 必填 | 描述 |
+|------|------|------|------|
+| userId | int64 | 是 | 用户ID |
+| promptId | string | 是 | 提示词ID |
+
+**请求示例**:
+```json
+{
+  "userId": 1,
+  "promptId": "77a11fe2-3df0-4bef-bd0f-cbe1203fdef6"
+}
+```
+
+---
+
+### 清理旧记录
+
+**接口**: `POST /api/v1/recently-used/clean`
+
+**请求参数**:
+
+| 字段 | 类型 | 必填 | 描述 |
+|------|------|------|------|
+| userId | int64 | 是 | 用户ID |
+| keepCount | int | 否 | 保留数量 (默认50) |
+
+**请求示例**:
+```json
+{
+  "userId": 1,
+  "keepCount": 20
+}
+```
+
+---
+
 ## Prompt API
 
 ### 创建提示词
@@ -158,11 +606,12 @@ Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户�
 **请求参数**:
 
 | 字段 | 类型 | 必填 | 描述 |
-|------|------|----|------|
-| name | string | 是  | 提示词名称 |
-| createdBy | string | 是  | 创建者ID |
-| username | string | 是  | 创建者用户名 |
-| path | string | 是  | 路径 |
+|------|------|------|------|
+| name | string | 是 | 提示词名称 |
+| createdBy | string | 是 | 创建者ID |
+| username | string | 是 | 创建者用户名 |
+| path | string | 否 | 路径 (自动生成) |
+| category | string | 否 | 分类ID |
 
 **请求示例**:
 ```json
@@ -170,7 +619,7 @@ Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户�
   "name": "文案生成助手",
   "createdBy": "user123",
   "username": "管理员",
-  "path": "/text-generate"
+  "category": "1"
 }
 ```
 
@@ -185,6 +634,7 @@ Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户�
 | isPublish | boolean | 是否发布 |
 | createBy | string | 创建者ID |
 | username | string | 创建者用户名 |
+| category | string | 分类ID |
 | createAt | string | 创建时间 |
 | updateAt | string | 更新时间 |
 
@@ -235,6 +685,7 @@ Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户�
       "isPublish": true,
       "createBy": "user123",
       "username": "管理员",
+      "category": "1",
       "createAt": "2024-01-01 00:00:00",
       "updateAt": "2024-01-01 00:00:00"
     },
@@ -278,13 +729,15 @@ Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户�
 | id | string | 是 | 提示词ID |
 | name | string | 是 | 提示词名称 |
 | isPublish | boolean | 否 | 是否发布 |
+| category | string | 否 | 分类ID |
 
 **请求示例**:
 ```json
 {
   "id": "xxx-xxx-xxx",
   "name": "更新后的名称",
-  "isPublish": false
+  "isPublish": false,
+  "category": "2"
 }
 ```
 
@@ -308,31 +761,40 @@ Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户�
 
 **查询参数**:
 
-| 字段 | 类型 | 必填 | 描述 |
-|------|------|------|------|
-| offset | int | 否 | 偏移量 (默认0) |
-| limit | int | 否 | 限制数量 (默认10) |
+| 字段 | 类型 | 必填 | 描述                   |
+|------|------|------|----------------------|
+| username | string | 是 | 用户名 (根据created_by过滤) |
+| offset | int | 否 | 偏移量 (默认0)            |
+| limit | int | 否 | 限制数量 (默认10)          |
 
-**响应示例**:
+**统一分页响应结构**:
 ```json
 {
   "code": 0,
-  "data": [
-    {
-      "id": "xxx-xxx-xxx",
-      "name": "文案生成助手",
-      "path": "文案生成助手",
-      "latestVersion": "version-xxx-xxx",
-      "isPublish": true,
-      "createBy": "user123",
-      "username": "管理员",
-      "createAt": "2024-01-01 00:00:00",
-      "updateAt": "2024-01-01 00:00:00"
-    }
-  ],
+  "data": {
+    "list": [
+      {
+        "id": "xxx-xxx-xxx",
+        "name": "文案生成助手",
+        "path": "文案生成助手",
+        "latestVersion": "version-xxx-xxx",
+        "isPublish": true,
+        "createBy": "user123",
+        "username": "管理员",
+        "category": "1",
+        "createAt": "2024-01-01 00:00:00",
+        "updateAt": "2024-01-01 00:00:00"
+      }
+    ],
+    "total": 5,
+    "page": 0,
+    "limit": 10
+  },
   "message": "success"
 }
 ```
+
+**注意**: 该接口根据 `created_by` 字段过滤，返回指定用户创建的prompt列表。
 
 ---
 
@@ -478,7 +940,33 @@ Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户�
 | offset | int | 否 | 偏移量 (默认0) |
 | limit | int | 否 | 限制数量 (默认10) |
 
----
+**统一分页响应结构**:
+```json
+{
+  "code": 0,
+  "data": {
+    "list": [
+      {
+        "id": "version-xxx-xxx",
+        "promptId": "xxx-xxx-xxx",
+        "version": "1.0.0",
+        "content": "你是一个专业的文案生成助手...",
+        "variables": "[\"topic\", \"tone\"]",
+        "isPublish": true,
+        "changeLog": "初始版本",
+        "createdBy": "user123",
+        "username": "管理员",
+        "createdAt": "2024-01-01 00:00:00",
+        "updatedAt": "2024-01-01 00:00:00"
+      }
+    ],
+    "total": 50,
+    "page": 0,
+    "limit": 10
+  },
+  "message": "success"
+}
+```
 
 ## 错误码说明
 
@@ -499,14 +987,35 @@ curl -X POST http://localhost:8080/api/v1/user/create \
   -d '{"username": "admin", "nickname": "管理员", "department": "技术部"}'
 ```
 
-### 2. 创建提示词
+### 2. 创建分类
+```bash
+curl -X POST http://localhost:8080/api/v1/category/create \
+  -H "Content-Type: application/json" \
+  -d '{"id": "1", "title": "文案生成", "icon": "file", "url": "/category/copywriting", "createdBy": "admin", "username": "管理员"}'
+```
+
+### 3. 创建提示词
 ```bash
 curl -X POST http://localhost:8080/api/v1/prompt/create \
   -H "Content-Type: application/json" \
-  -d '{"name": "文案生成助手", "createdBy": "admin", "username": "管理员"}'
+  -d '{"name": "文案生成助手", "createdBy": "admin", "username": "管理员", "category": "1"}'
 ```
 
-### 3. 创建并发布版本
+### 4. 收藏提示词
+```bash
+curl -X POST http://localhost:8080/api/v1/favorites/add \
+  -H "Content-Type: application/json" \
+  -d '{"userId": 1, "promptId": "xxx-xxx-xxx"}'
+```
+
+### 5. 记录使用
+```bash
+curl -X POST http://localhost:8080/api/v1/recently-used/record \
+  -H "Content-Type: application/json" \
+  -d '{"userId": 1, "promptId": "xxx-xxx-xxx"}'
+```
+
+### 6. 创建并发布版本
 ```bash
 curl -X POST http://localhost:8080/api/v1/version/create \
   -H "Content-Type: application/json" \
@@ -520,7 +1029,17 @@ curl -X POST http://localhost:8080/api/v1/version/create \
   }'
 ```
 
-### 4. 获取发布内容
+### 7. 获取发布内容
 ```bash
 curl -X GET "http://localhost:8080/api/v1/prompt/content?path=文案生成助手"
+```
+
+### 8. 获取收藏列表
+```bash
+curl -X GET "http://localhost:8080/api/v1/favorites/list?userId=1"
+```
+
+### 9. 获取最近使用
+```bash
+curl -X GET "http://localhost:8080/api/v1/recently-used/list?userId=1&limit=10"
 ```
