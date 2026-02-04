@@ -27,7 +27,7 @@ func CreateFavoriteRepo(db *sqlx.DB) *Repo {
 	return &Repo{db: db}
 }
 
-func (r *Repo) Create(ctx context.Context, f *model.Favorite) (*model.Favorite, error) {
+func (r *Repo) Create(ctx context.Context, f *model.Favorite) error {
 	now := time.Now()
 	f.CreatedAt = now
 	query := `
@@ -35,10 +35,7 @@ func (r *Repo) Create(ctx context.Context, f *model.Favorite) (*model.Favorite, 
 		VALUES (:id, :user_id, :prompt_id, :created_at)
 	`
 	_, err := r.db.NamedExecContext(ctx, query, f)
-	if err != nil {
-		return nil, err
-	}
-	return f, nil
+	return err
 }
 
 func (r *Repo) DeleteByUserAndPrompt(ctx context.Context, userID int64, promptID string) error {

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"backend/internal/api/dto"
+	"backend/internal/api/middleware"
 	"backend/internal/api/vo"
 	recentlyUsedService "backend/internal/service/recently_used"
 	"backend/pkg/errors"
@@ -32,7 +33,17 @@ func (h *RecentlyUsedHandler) Record(c *gin.Context) {
 		return
 	}
 
-	rec, err := h.service.RecordUsage(c.Request.Context(), req)
+	userID, _, ok := middleware.GetUserFromContext(c)
+	if !ok {
+		response.Error(c, http.StatusUnauthorized, response.Response{
+			Code:    errors.DefaultError,
+			Data:    nil,
+			Message: "unauthorized",
+		})
+		return
+	}
+
+	rec, err := h.service.RecordUsage(c.Request.Context(), userID, req)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, response.Response{
 			Code:    errors.ServerError,
@@ -56,7 +67,17 @@ func (h *RecentlyUsedHandler) Remove(c *gin.Context) {
 		return
 	}
 
-	if err := h.service.RemoveRecord(c.Request.Context(), req); err != nil {
+	userID, _, ok := middleware.GetUserFromContext(c)
+	if !ok {
+		response.Error(c, http.StatusUnauthorized, response.Response{
+			Code:    errors.DefaultError,
+			Data:    nil,
+			Message: "unauthorized",
+		})
+		return
+	}
+
+	if err := h.service.RemoveRecord(c.Request.Context(), userID, req); err != nil {
 		response.Error(c, http.StatusInternalServerError, response.Response{
 			Code:    errors.ServerError,
 			Data:    nil,
@@ -68,22 +89,12 @@ func (h *RecentlyUsedHandler) Remove(c *gin.Context) {
 }
 
 func (h *RecentlyUsedHandler) List(c *gin.Context) {
-	userIDStr := c.Query("userId")
-	if userIDStr == "" {
-		response.Error(c, http.StatusBadRequest, response.Response{
+	userID, _, ok := middleware.GetUserFromContext(c)
+	if !ok {
+		response.Error(c, http.StatusUnauthorized, response.Response{
 			Code:    errors.DefaultError,
 			Data:    nil,
-			Message: "userId is required",
-		})
-		return
-	}
-
-	userID, err := strconv.ParseInt(userIDStr, 10, 64)
-	if err != nil {
-		response.Error(c, http.StatusBadRequest, response.Response{
-			Code:    errors.DefaultError,
-			Data:    nil,
-			Message: "invalid userId",
+			Message: "unauthorized",
 		})
 		return
 	}
@@ -117,7 +128,17 @@ func (h *RecentlyUsedHandler) Clean(c *gin.Context) {
 		return
 	}
 
-	if err := h.service.CleanOldRecords(c.Request.Context(), req.UserID, req.KeepCount); err != nil {
+	userID, _, ok := middleware.GetUserFromContext(c)
+	if !ok {
+		response.Error(c, http.StatusUnauthorized, response.Response{
+			Code:    errors.DefaultError,
+			Data:    nil,
+			Message: "unauthorized",
+		})
+		return
+	}
+
+	if err := h.service.CleanOldRecords(c.Request.Context(), userID, req.KeepCount); err != nil {
 		response.Error(c, http.StatusInternalServerError, response.Response{
 			Code:    errors.ServerError,
 			Data:    nil,

@@ -39,10 +39,12 @@ func CreateCategoryService(repo *category.Repo, logger *zap.Logger) *Service {
 
 func (s *Service) Create(ctx context.Context, req dto.CreateCategoryDTO) (*model.Category, error) {
 	c := &model.Category{
-		ID:    req.ID,
-		Title: req.Title,
-		Icon:  req.Icon,
-		URL:   req.URL,
+		ID:        req.ID,
+		Title:     req.Title,
+		Icon:      req.Icon,
+		URL:       req.URL,
+		CreatedBy: req.CreatedBy,
+		Username:  req.Username,
 	}
 
 	c, err := s.repo.Create(ctx, c)

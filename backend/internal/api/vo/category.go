@@ -11,6 +11,8 @@ type CategoryVO struct {
 	Icon      string `json:"icon"`
 	Count     int    `json:"count"`
 	URL       string `json:"url"`
+	CreatedBy string `json:"createdBy"`
+	Username  string `json:"username"`
 	CreatedAt string `json:"createdAt"`
 	UpdatedAt string `json:"updatedAt"`
 }
@@ -22,6 +24,8 @@ func FromCategory(c *model.Category) *CategoryVO {
 		Icon:      c.Icon,
 		Count:     c.Count,
 		URL:       c.URL,
+		CreatedBy: c.CreatedBy,
+		Username:  c.Username,
 		CreatedAt: common.FormatTime(c.CreatedAt),
 		UpdatedAt: common.FormatTime(c.UpdatedAt),
 	}

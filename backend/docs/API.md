@@ -25,6 +25,81 @@ Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户�
 
 ## User API
 
+### 用户登录
+
+**接口**: `POST /api/v1/user/login`
+
+**请求参数**:
+
+| 字段 | 类型 | 必填 | 描述 |
+|------|------|------|------|
+| username | string | 是 | 用户名 |
+| password | string | 是 | 密码 |
+
+**请求示例**:
+```json
+{
+  "username": "admin",
+  "password": "123456"
+}
+```
+
+**响应参数**:
+
+| 字段 | 类型 | 描述 |
+|------|------|------|
+| token | string | JWT 令牌 |
+| user | object | 用户信息 |
+| expireAt | string | 过期时间 |
+
+**响应示例**:
+```json
+{
+  "code": 0,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "id": "1",
+      "username": "admin",
+      "nickname": "管理员",
+      "department": "技术部"
+    },
+    "expireAt": "2024-01-02 12:00:00"
+  },
+  "message": "success"
+}
+```
+
+---
+
+### 用户登出
+
+**接口**: `POST /api/v1/user/logout`
+
+**请求参数**:
+
+| 字段 | 类型 | 必填 | 描述 |
+|------|------|------|------|
+| username | string | 是 | 用户名 |
+
+**请求示例**:
+```json
+{
+  "username": "admin"
+}
+```
+
+**响应示例**:
+```json
+{
+  "code": 0,
+  "data": null,
+  "message": "success"
+}
+```
+
+---
+
 ### 创建用户
 
 **接口**: `POST /api/v1/user/create`
@@ -34,6 +109,7 @@ Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户�
 | 字段 | 类型 | 必填 | 描述 |
 |------|------|------|------|
 | username | string | 是 | 用户名 (3-32字符) |
+| password | string | 是 | 密码 (最少6位) |
 | nickname | string | 否 | 昵称 |
 | department | string | 否 | 部门 |
 
@@ -41,6 +117,7 @@ Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户�
 ```json
 {
   "username": "admin",
+  "password": "123456",
   "nickname": "管理员",
   "department": "技术部"
 }
@@ -163,6 +240,8 @@ Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户�
 | title | string | 是 | 分类标题 |
 | icon | string | 是 | 图标名称 |
 | url | string | 是 | 访问路径 |
+| createdBy | string | 是 | 创建者ID |
+| username | string | 是 | 创建者用户名 |
 
 **请求示例**:
 ```json
@@ -170,7 +249,9 @@ Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户�
   "id": "5",
   "title": "数据分析",
   "icon": "chart",
-  "url": "/category/analysis"
+  "url": "/category/analysis",
+  "createdBy": "admin",
+  "username": "管理员"
 }
 ```
 
@@ -183,6 +264,8 @@ Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户�
 | icon | string | 图标名称 |
 | count | int | 数量 |
 | url | string | 访问路径 |
+| createdBy | string | 创建者ID |
+| username | string | 创建者用户名 |
 | createdAt | string | 创建时间 |
 | updatedAt | string | 更新时间 |
 
@@ -238,15 +321,18 @@ Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户�
 | icon | string | 是 | 图标名称 |
 | count | int | 否 | 数量 |
 | url | string | 是 | 访问路径 |
+| createdBy | string | 否 | 创建者ID |
+| username | string | 否 | 创建者用户名 |
 
 **请求示例**:
 ```json
 {
-  "id": "1",
-  "title": "数据挖掘",
-  "icon": "database",
-  "count": 10,
-  "url": "/category/data-mining"
+  "id": "5",
+  "title": "数据分析",
+  "icon": "chart",
+  "url": "/category/analysis",
+  "createdBy": "admin",
+  "username": "管理员"
 }
 ```
 
@@ -264,7 +350,31 @@ Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户�
 
 ---
 
+## 认证说明
+
+### JWT Token
+
+除以下公开接口外，所有 API 都需要在 Header 中携带 JWT Token：
+
+**公开接口（无需认证）**:
+- `POST /api/v1/user/login` - 用户登录
+- `POST /api/v1/user/create` - 创建用户
+- `GET /api/v1/ping` - 健康检查
+
+**Token 格式**:
+```
+Authorization: Bearer <token>
+```
+
+**Token 包含信息**:
+- `userId` - 用户ID
+- `username` - 用户名
+
+---
+
 ## Favorites API (收藏夹)
+
+> 需要 JWT 认证（从 Token 中获取用户信息，无需传 userId）
 
 ### 添加收藏
 
@@ -274,25 +384,19 @@ Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户�
 
 | 字段 | 类型 | 必填 | 描述 |
 |------|------|------|------|
-| userId | int64 | 是 | 用户ID |
 | promptId | string | 是 | 提示词ID |
 
 **请求示例**:
 ```json
 {
-  "userId": 1,
   "promptId": "77a11fe2-3df0-4bef-bd0f-cbe1203fdef6"
 }
 ```
 
-**响应参数**:
-
-| 字段 | 类型 | 描述 |
-|------|------|------|
-| id | string | 收藏记录ID |
-| userId | int64 | 用户ID |
-| promptId | string | 提示词ID |
-| createdAt | string | 创建时间 |
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 ---
 
@@ -304,16 +408,7 @@ Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户�
 
 | 字段 | 类型 | 必填 | 描述 |
 |------|------|------|------|
-| userId | int64 | 是 | 用户ID |
 | promptId | string | 是 | 提示词ID |
-
-**请求示例**:
-```json
-{
-  "userId": 1,
-  "promptId": "77a11fe2-3df0-4bef-bd0f-cbe1203fdef6"
-}
-```
 
 ---
 
@@ -325,19 +420,7 @@ Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户�
 
 | 字段 | 类型 | 必填 | 描述 |
 |------|------|------|------|
-| userId | int64 | 是 | 用户ID |
 | promptId | string | 是 | 提示词ID |
-
-**响应示例**:
-```json
-{
-  "code": 0,
-  "data": {
-    "isFavorite": true
-  },
-  "message": "success"
-}
-```
 
 ---
 
@@ -349,38 +432,14 @@ Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户�
 
 | 字段 | 类型 | 必填 | 描述 |
 |------|------|------|------|
-| userId | int64 | 是 | 用户ID |
 | offset | int | 否 | 偏移量 (默认0) |
 | limit | int | 否 | 限制数量 (默认10) |
-
-**统一分页响应结构**:
-```json
-{
-  "code": 0,
-  "data": {
-    "list": [
-      {
-        "id": "xxx-xxx-xxx",
-        "userId": 1,
-        "promptId": "77a11fe2-3df0-4bef-bd0f-cbe1203fdef6",
-        "createdAt": "2024-01-01 00:00:00",
-        "promptName": "文案生成助手",
-        "promptPath": "/copywriting",
-        "latestVersion": "version-xxx",
-        "category": "1"
-      }
-    ],
-    "total": 15,
-    "page": 0,
-    "limit": 10
-  },
-  "message": "success"
-}
-```
 
 ---
 
 ## Recently Used API (最近使用)
+
+> 需要 JWT 认证（从 Token 中获取用户信息，无需传 userId）
 
 ### 记录使用
 
@@ -390,13 +449,11 @@ Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户�
 
 | 字段 | 类型 | 必填 | 描述 |
 |------|------|------|------|
-| userId | int64 | 是 | 用户ID |
 | promptId | string | 是 | 提示词ID |
 
 **请求示例**:
 ```json
 {
-  "userId": 1,
   "promptId": "77a11fe2-3df0-4bef-bd0f-cbe1203fdef6"
 }
 ```
@@ -662,11 +719,11 @@ Prompt Manager 后端 API 基于 Go + Gin 框架开发，提供完整的用户�
 
 **查询参数**:
 
-| 字段 | 类型 | 必填 | 描述 |
-|------|------|------|------|
-| userId | string | 是 | 用户ID (根据created_by过滤) |
-| offset | int | 否 | 偏移量 (默认0) |
-| limit | int | 否 | 限制数量 (默认10) |
+| 字段 | 类型 | 必填 | 描述                   |
+|------|------|------|----------------------|
+| username | string | 是 | 用户名 (根据created_by过滤) |
+| offset | int | 否 | 偏移量 (默认0)            |
+| limit | int | 否 | 限制数量 (默认10)          |
 
 **统一分页响应结构**:
 ```json
@@ -892,7 +949,7 @@ curl -X POST http://localhost:8080/api/v1/user/create \
 ```bash
 curl -X POST http://localhost:8080/api/v1/category/create \
   -H "Content-Type: application/json" \
-  -d '{"id": "1", "title": "文案生成", "icon": "file", "url": "/category/copywriting"}'
+  -d '{"id": "1", "title": "文案生成", "icon": "file", "url": "/category/copywriting", "createdBy": "admin", "username": "管理员"}'
 ```
 
 ### 3. 创建提示词

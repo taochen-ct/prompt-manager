@@ -15,21 +15,48 @@ GET http://localhost:8080/api/v1/ping
 
 ###
 
+// User Login
+POST http://localhost:8080/api/v1/user/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "123456"
+}
+> {%
+  client.global.set("token", response.body.data.token);
+%}
+
+###
+
+// User Logout
+POST http://localhost:8080/api/v1/user/logout
+Content-Type: application/json
+
+{
+  "username": "admin"
+}
+
+###
+
 // Create User
 POST http://localhost:8080/api/v1/user/create
 Content-Type: application/json
 
 {
-  "username": "test_user",
-  "nickname": "测试用户",
+  "username": "admin",
+  "password": "123456",
+  "nickname": "管理员",
   "department": "技术部"
 }
 > {%
   client.global.set("user_id", response.body.data.id);
+  client.global.set("username", response.body.data.username);
 %}
 
+###
 // ============================================
-// Category API
+// Category API (需要 JWT)
 // ============================================
 
 ###
@@ -37,12 +64,15 @@ Content-Type: application/json
 // Create Category
 POST http://localhost:8080/api/v1/category/create
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-  "id": "5",
-  "title": "数据分析",
-  "icon": "chart",
-  "url": "/category/analysis"
+  "id": "1",
+  "title": "文案生成",
+  "icon": "file",
+  "url": "/category/copywriting",
+  "createdBy": "admin",
+  "username": "管理员"
 }
 > {%
   client.global.set("category_id", response.body.data.id);
@@ -52,33 +82,39 @@ Content-Type: application/json
 
 // Get Category by ID
 GET http://localhost:8080/api/v1/category/info/{{category_id}}
+Authorization: Bearer {{token}}
 
 ###
 
 // List Categories
 GET http://localhost:8080/api/v1/category/list
+Authorization: Bearer {{token}}
 
 ###
 
 // Update Category
 POST http://localhost:8080/api/v1/category/update
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
   "id": "{{category_id}}",
   "title": "数据挖掘",
   "icon": "database",
   "count": 10,
-  "url": "/category/data-mining"
+  "url": "/category/data-mining",
+  "createdBy": "admin",
+  "username": "管理员"
 }
 
 ###
 
 // Delete Category
 POST http://localhost:8080/api/v1/category/delete/{{category_id}}
+Authorization: Bearer {{token}}
 
 // ============================================
-// Prompt API
+// Prompt API (需要 JWT)
 // ============================================
 
 ###
@@ -86,12 +122,13 @@ POST http://localhost:8080/api/v1/category/delete/{{category_id}}
 // Create Prompt
 POST http://localhost:8080/api/v1/prompt/create
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-  "name": "我的提示词",
-  "createdBy": "user123",
-  "username": "测试用户",
-  "path": "/api-test",
+  "name": "文案生成助手",
+  "createdBy": "admin",
+  "username": "管理员",
+  "path": "/copywriting",
   "category": "1"
 }
 > {%
@@ -103,17 +140,20 @@ Content-Type: application/json
 
 // Get Prompt by ID
 GET http://localhost:8080/api/v1/prompt/info/{{prompt_id}}
+Authorization: Bearer {{token}}
 
 ###
 
 // Get Prompt Content (published version)
 GET http://localhost:8080/api/v1/prompt/content{{prompt_path}}
+Authorization: Bearer {{token}}
 
 ###
 
 // Update Prompt
 POST http://localhost:8080/api/v1/prompt/update
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
   "id": "{{prompt_id}}",
@@ -126,14 +166,16 @@ Content-Type: application/json
 
 // Delete Prompt
 POST http://localhost:8080/api/v1/prompt/delete/{{prompt_id}}
+Authorization: Bearer {{token}}
 
 ###
 
 // List Prompts
 GET http://localhost:8080/api/v1/prompt/list?offset=0&limit=10
+Authorization: Bearer {{token}}
 
 // ============================================
-// Favorites API
+// Favorites API (需要 JWT)
 // ============================================
 
 ###
@@ -141,10 +183,10 @@ GET http://localhost:8080/api/v1/prompt/list?offset=0&limit=10
 // Add to Favorites
 POST http://localhost:8080/api/v1/favorites/add
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-  "userId": 1,
-  "promptId": "77a11fe2-3df0-4bef-bd0f-cbe1203fdef6"
+  "promptId": "{{prompt_id}}"
 }
 
 ###
@@ -152,30 +194,33 @@ Content-Type: application/json
 // Check if Favorite
 POST http://localhost:8080/api/v1/favorites/check
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-  "userId": 1,
-  "promptId": "77a11fe2-3df0-4bef-bd0f-cbe1203fdef6"
+  "promptId": "{{prompt_id}}"
 }
 
 ###
 
 // List Favorites
-GET http://localhost:8080/api/v1/favorites/list?userId=1
+GET http://localhost:8080/api/v1/favorites/list?offset=0&limit=10
+Authorization: Bearer {{token}}
 
 ###
 
 // Remove from Favorites
 POST http://localhost:8080/api/v1/favorites/remove
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-  "userId": 1,
-  "promptId": "77a11fe2-3df0-4bef-bd0f-cbe1203fdef6"
+  "promptId": "{{prompt_id}}"
 }
 
+###
+
 // ============================================
-// Recently Used API
+// Recently Used API (需要 JWT)
 // ============================================
 
 ###
@@ -183,26 +228,27 @@ Content-Type: application/json
 // Record Usage
 POST http://localhost:8080/api/v1/recently-used/record
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-  "userId": 1,
-  "promptId": "77a11fe2-3df0-4bef-bd0f-cbe1203fdef6"
+  "promptId": "{{prompt_id}}"
 }
 
 ###
 
 // List Recently Used
-GET http://localhost:8080/api/v1/recently-used/list?userId=1&limit=10
+GET http://localhost:8080/api/v1/recently-used/list?offset=0&limit=10
+Authorization: Bearer {{token}}
 
 ###
 
 // Remove from Recently Used
 POST http://localhost:8080/api/v1/recently-used/remove
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-  "userId": 1,
-  "promptId": "77a11fe2-3df0-4bef-bd0f-cbe1203fdef6"
+  "promptId": "{{prompt_id}}"
 }
 
 ###
@@ -210,14 +256,16 @@ Content-Type: application/json
 // Clean Old Records
 POST http://localhost:8080/api/v1/recently-used/clean
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-  "userId": 1,
   "keepCount": 20
 }
 
+###
+
 // ============================================
-// Prompt Version API
+// Prompt Version API (需要 JWT)
 // ============================================
 
 ###
@@ -225,61 +273,64 @@ Content-Type: application/json
 // Create Prompt Version
 POST http://localhost:8080/api/v1/version/create
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-  "promptId": "77a11fe2-3df0-4bef-bd0f-cbe1203fdef6",
-  "version": "1.0.1",
-  "content": "这是一个提示词内容",
-  "variables": "[\"name\", \"age\"]",
+  "promptId": "{{prompt_id}}",
+  "version": "1.0.0",
+  "content": "你是一个专业的文案生成助手...",
+  "variables": "[\"topic\", \"tone\"]",
   "changeLog": "初始版本",
-  "createdBy": "user123",
-  "username": "测试用户",
+  "createdBy": "admin",
+  "username": "管理员",
   "isPublish": true
 }
 > {%
   client.global.set("version_id", response.body.data.id);
-  client.global.set("prompt_id", response.body.data.promptId);
 %}
-
-// ============================================
 
 ###
 
 // Get Version by ID
 GET http://localhost:8080/api/v1/version/info/{{version_id}}
+Authorization: Bearer {{token}}
 
 ###
 
 // Get Versions by Prompt ID
 GET http://localhost:8080/api/v1/version/prompt/{{prompt_id}}
+Authorization: Bearer {{token}}
 
 ###
 
 // Get Latest Version by Prompt ID
 GET http://localhost:8080/api/v1/version/prompt/{{prompt_id}}/latest
+Authorization: Bearer {{token}}
 
 ###
 
 // Update Version
 POST http://localhost:8080/api/v1/version/update
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
   "id": "{{version_id}}",
-  "version": "1.0.2",
-  "content": "更新后的提示词内容",
-  "variables": "[\"name\", \"age\", \"city\"]",
-  "changeLog": "修复bug",
-  "isPublish": false
+  "version": "1.1.0",
+  "content": "更新后的提示词内容...",
+  "variables": "[\"topic\", \"tone\", \"audience\"]",
+  "changeLog": "优化提示词",
+  "isPublish": true
 }
 
 ###
 
 // Delete Version
 POST http://localhost:8080/api/v1/version/delete/{{version_id}}
+Authorization: Bearer {{token}}
 
 ###
 
 // List Versions
 GET http://localhost:8080/api/v1/version/list?offset=0&limit=10
-
+Authorization: Bearer {{token}}

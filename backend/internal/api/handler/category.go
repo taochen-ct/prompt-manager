@@ -103,11 +103,13 @@ func (h *CategoryHandler) Update(c *gin.Context) {
 	}
 
 	category := &model.Category{
-		ID:    req.ID,
-		Title: req.Title,
-		Icon:  req.Icon,
-		Count: req.Count,
-		URL:   req.URL,
+		ID:        req.ID,
+		Title:     req.Title,
+		Icon:      req.Icon,
+		Count:     req.Count,
+		URL:       req.URL,
+		CreatedBy: req.CreatedBy,
+		Username:  req.Username,
 	}
 
 	if err := h.service.Update(c.Request.Context(), category); err != nil {

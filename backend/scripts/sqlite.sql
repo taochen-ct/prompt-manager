@@ -1,9 +1,10 @@
-PRAGMA foreign_keys = off;
+PRAGMA foreign_keys = on;
 
 -- user
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL,
     nickname TEXT NOT NULL DEFAULT '',
     department TEXT NOT NULL DEFAULT '',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -56,21 +57,23 @@ CREATE INDEX idx_prompt_version_publish
 ON prompt_version(prompt_id, is_publish);
 
 
-CREATE TABLE prompt_categories (
+CREATE TABLE categories (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
     icon TEXT NOT NULL,
     count INTEGER NOT NULL DEFAULT 0,
     url TEXT NOT NULL,
+    created_by TEXT NOT NULL,
+    username TEXT NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO prompt_categories (id, title, icon, count, url) VALUES
-('1', '文案生成', 'file', 5, '/category/copywriting'),
-('2', '代码助手', 'sparkles', 3, '/category/coding'),
-('3', '翻译工具', 'file', 2, '/category/translation'),
-('4', '数据分析', 'file', 4, '/category/analysis');
+INSERT INTO categories (id, title, icon, count, url, created_by, username) VALUES
+('1', '文案生成', 'file', 5, '/category/copywriting', 'system', 'system'),
+('2', '代码助手', 'sparkles', 3, '/category/coding', 'system', 'system'),
+('3', '翻译工具', 'file', 2, '/category/translation', 'system', 'system'),
+('4', '数据分析', 'file', 4, '/category/analysis', 'system', 'system');
 
 
 -- favorites (收藏夹)

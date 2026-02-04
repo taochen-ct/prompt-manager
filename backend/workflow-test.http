@@ -1,6 +1,9 @@
-
 // ============================================
 // Complete Workflow Example
+// ============================================
+
+// ============================================
+// Step 1: User Login (获取 JWT Token)
 // ============================================
 
 // 1. Create User
@@ -11,6 +14,7 @@ Content-Type: application/json
 {
   "username": "admin",
   "nickname": "管理员",
+  "password": "123456",
   "department": "技术部"
 }
 
@@ -20,36 +24,54 @@ Content-Type: application/json
 
 ###
 
-// ============================================
-// Category Workflow
-// ============================================
-
-// 2. Create Category
-# Create a category for prompts
-POST http://localhost:8080/api/v1/category/create
+// 1. Login to get JWT Token
+POST http://localhost:8080/api/v1/user/login
 Content-Type: application/json
 
 {
-  "id": " copywriting",
-  "title": "文案生成",
-  "icon": "file",
-  "url": "/category/copywriting"
+  "username": "admin",
+  "password": "123456"
 }
 
 > {%
-    client.global.set("categoryId", response.body.data.id)
+    client.global.set("token", response.body.data.token);
+    client.global.set("userId", response.body.data.user.id);
 %}
 
 ###
 
 // ============================================
-// Prompt Workflow
+// Step 2: Create Category (需要 JWT)
+// ============================================
+
+// 2. Create Category
+POST http://localhost:8080/api/v1/category/create
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "id": "1",
+  "title": "文案生成",
+  "icon": "file",
+  "url": "/category/copywriting",
+  "createdBy": "admin",
+  "username": "管理员"
+}
+
+> {%
+    client.global.set("categoryId", response.body.data.id);
+%}
+
+###
+
+// ============================================
+// Step 3: Create Prompt (需要 JWT)
 // ============================================
 
 // 3. Create Prompt with Category
-# Create a prompt and assign to category
 POST http://localhost:8080/api/v1/prompt/create
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
   "name": "文案生成助手",
@@ -60,60 +82,54 @@ Content-Type: application/json
 }
 
 > {%
-    client.global.set("promptId", response.body.data.id)
+    client.global.set("promptId", response.body.data.id);
 %}
 
 ###
 
 // ============================================
-// Favorites Workflow
+// Step 4: Favorites Operations (需要 JWT)
 // ============================================
 
 // 4. Add to Favorites
-# Add the prompt to user's favorites
 POST http://localhost:8080/api/v1/favorites/add
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-  "userId": 1,
   "promptId": "{{promptId}}"
 }
-
 ###
 
 // ============================================
 
 // 5. Check if Favorited
-# Verify the prompt is in favorites
 POST http://localhost:8080/api/v1/favorites/check
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-  "userId": 1,
   "promptId": "{{promptId}}"
 }
-
 ###
 
 // ============================================
 
 // 6. List Favorites
-# Get list of favorite prompts
-GET http://localhost:8080/api/v1/favorites/list?userId=1
+GET http://localhost:8080/api/v1/favorites/list
+Authorization: Bearer {{token}}
 
 // ============================================
-// Recently Used Workflow
+// Step 5: Recently Used Operations (需要 JWT)
 // ============================================
-
 ###
 
 // 7. Record First Usage
-# Record first usage of the prompt
 POST http://localhost:8080/api/v1/recently-used/record
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-  "userId": 1,
   "promptId": "{{promptId}}"
 }
 
@@ -121,13 +137,12 @@ Content-Type: application/json
 
 // ============================================
 
-// 8. Record Second Usage
-# Record second usage (updates timestamp)
+// 8. Record Second Usage (updates timestamp)
 POST http://localhost:8080/api/v1/recently-used/record
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-  "userId": 1,
   "promptId": "{{promptId}}"
 }
 
@@ -136,17 +151,19 @@ Content-Type: application/json
 // ============================================
 
 // 9. List Recently Used
-# Get recently used prompts
-GET http://localhost:8080/api/v1/recently-used/list?userId=1&limit=10
+GET http://localhost:8080/api/v1/recently-used/list?limit=10
+Authorization: Bearer {{token}}
+
+###
 
 // ============================================
-// Prompt Version Workflow
+// Step 6: Prompt Version Operations (需要 JWT)
 // ============================================
 
-// 10. Create Prompt Version (Publish)
-# Create and publish first version
+// 10. Create and Publish First Version
 POST http://localhost:8080/api/v1/version/create
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
   "promptId": "{{promptId}}",
@@ -160,23 +177,26 @@ Content-Type: application/json
 }
 
 > {%
-    client.global.set("versionId", response.body.data.id)
+    client.global.set("versionId", response.body.data.id);
 %}
-
-###
-
-// 11. Get Prompt Content
-# Get published prompt with version details
-GET http://localhost:8080/api/v1/prompt/content/text-generate
 
 ###
 
 // ============================================
 
+// 11. Get Prompt Content (Published)
+GET http://localhost:8080/api/v1/prompt/content/text-generate
+Authorization: Bearer {{token}}
+
+###
+
+
+// ============================================
+
 // 12. Create New Version
-# Create a new version
 POST http://localhost:8080/api/v1/version/create
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
   "promptId": "{{promptId}}",
@@ -194,58 +214,61 @@ Content-Type: application/json
 // ============================================
 
 // 13. Get Latest Version
-# Get the latest published version
 GET http://localhost:8080/api/v1/version/prompt/{{promptId}}/latest
+Authorization: Bearer {{token}}
 
 ###
 
 // ============================================
 
 // 14. List All Versions
-# List all versions of this prompt
 GET http://localhost:8080/api/v1/version/prompt/{{promptId}}
+Authorization: Bearer {{token}}
+
+// ============================================
+// Step 7: Category Management (需要 JWT)
+// ============================================
 
 ###
 
-// ============================================
-// Category Management
-// ============================================
-
 // 15. List Categories
-# List all available categories
 GET http://localhost:8080/api/v1/category/list
+Authorization: Bearer {{token}}
 
 // ============================================
 
 ###
 
 // 16. Update Category
-# Update category information
 POST http://localhost:8080/api/v1/category/update
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
   "id": "1",
   "title": "文案创作",
   "icon": "edit",
   "count": 10,
-  "url": "/category/writing"
+  "url": "/category/writing",
+  "createdBy": "admin",
+  "username": "管理员"
 }
-
 
 ###
 
+
 // ============================================
-// Cleanup Operations
+// Step 8: Cleanup Operations (需要 JWT)
 // ============================================
+
+###
 
 // 17. Remove from Favorites
-# Remove from favorites
 POST http://localhost:8080/api/v1/favorites/remove
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-  "userId": 1,
   "promptId": "{{promptId}}"
 }
 
@@ -254,12 +277,11 @@ Content-Type: application/json
 // ============================================
 
 // 18. Remove from Recently Used
-# Remove from recently used
 POST http://localhost:8080/api/v1/recently-used/remove
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-  "userId": 1,
   "promptId": "{{promptId}}"
 }
 
@@ -267,27 +289,27 @@ Content-Type: application/json
 
 // ============================================
 
-// 19. Clean Old Records
-# Clean old recently used records, keep only 20
+// 19. Clean Old Records (keep 20)
 POST http://localhost:8080/api/v1/recently-used/clean
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-  "userId": 1,
   "keepCount": 20
 }
 
 ###
 
 // ============================================
+// Step 9: Verify Cleanup (需要 JWT)
+// ============================================
 
-// 20. Verify Favorites
-# Verify prompt is removed from favorites
+// 20. Verify Favorites Removed
 POST http://localhost:8080/api/v1/favorites/check
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-  "userId": 1,
   "promptId": "{{promptId}}"
 }
 
@@ -295,9 +317,20 @@ Content-Type: application/json
 
 // ============================================
 
-// 21. Final List Recently Used
-# Verify recently used list
-GET http://localhost:8080/api/v1/recently-used/list?userId=1&limit=10
+// 21. Verify Recently Used List
+GET http://localhost:8080/api/v1/recently-used/list?limit=10
+Authorization: Bearer {{token}}
+
+// ============================================
+// Step 10: User Logout
+// ============================================
 
 ###
 
+// 22. Logout
+POST http://localhost:8080/api/v1/user/logout
+Content-Type: application/json
+
+{
+  "username": "admin"
+}

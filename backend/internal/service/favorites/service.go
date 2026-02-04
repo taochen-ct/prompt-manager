@@ -17,8 +17,8 @@ var (
 )
 
 type IService interface {
-	AddFavorite(ctx context.Context, req dto.AddFavoriteDTO) (*model.Favorite, error)
-	RemoveFavorite(ctx context.Context, req dto.RemoveFavoriteDTO) error
+	AddFavorite(ctx context.Context, userID int64, req dto.AddFavoriteDTO) (*model.Favorite, error)
+	RemoveFavorite(ctx context.Context, userID int64, req dto.RemoveFavoriteDTO) error
 	IsFavorite(ctx context.Context, userID int64, promptID string) (bool, error)
 	ListFavorites(ctx context.Context, userID int64, offset, limit int) ([]*model.FavoriteWithPrompt, int64, error)
 }
@@ -35,9 +35,8 @@ func CreateFavoriteService(repo *favorites.Repo, logger *zap.Logger) *Service {
 	}
 }
 
-func (s *Service) AddFavorite(ctx context.Context, req dto.AddFavoriteDTO) (*model.Favorite, error) {
-	// 检查是否已存在
-	exists, err := s.repo.Exists(ctx, req.UserID, req.PromptID)
+func (s *Service) AddFavorite(ctx context.Context, userID int64, req dto.AddFavoriteDTO) (*model.Favorite, error) {
+	exists, err := s.repo.Exists(ctx, userID, req.PromptID)
 	if err != nil {
 		s.logger.Error(err.Error())
 		return nil, ErrDatabaseErr
@@ -48,20 +47,19 @@ func (s *Service) AddFavorite(ctx context.Context, req dto.AddFavoriteDTO) (*mod
 
 	f := &model.Favorite{
 		ID:       uuid.New().String(),
-		UserID:   req.UserID,
+		UserID:   userID,
 		PromptID: req.PromptID,
 	}
 
-	f, err = s.repo.Create(ctx, f)
-	if err != nil {
+	if err := s.repo.Create(ctx, f); err != nil {
 		s.logger.Error(err.Error())
 		return nil, ErrDatabaseErr
 	}
 	return f, nil
 }
 
-func (s *Service) RemoveFavorite(ctx context.Context, req dto.RemoveFavoriteDTO) error {
-	err := s.repo.DeleteByUserAndPrompt(ctx, req.UserID, req.PromptID)
+func (s *Service) RemoveFavorite(ctx context.Context, userID int64, req dto.RemoveFavoriteDTO) error {
+	err := s.repo.DeleteByUserAndPrompt(ctx, userID, req.PromptID)
 	if err != nil {
 		s.logger.Error(err.Error())
 		return ErrDatabaseErr

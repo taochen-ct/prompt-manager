@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS users
 (
     id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     username   VARCHAR(64)     NOT NULL,
+    password   VARCHAR(255)    NOT NULL,
     nickname   VARCHAR(64)     NOT NULL DEFAULT '',
     department VARCHAR(64)     NOT NULL DEFAULT '',
     created_at DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -64,17 +65,19 @@ CREATE TABLE prompt_categories
     icon       VARCHAR(50)  NOT NULL COMMENT '图标名称',
     count      INT          NOT NULL DEFAULT 0 COMMENT '数量',
     url        VARCHAR(255) NOT NULL COMMENT '访问路径',
+    created_by VARCHAR(64)  NOT NULL COMMENT '创建者ID',
+    username   VARCHAR(64)  NOT NULL COMMENT '创建者用户名',
     created_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (id)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4 COMMENT ='提示词分类表';
 
-INSERT INTO prompt_categories (id, title, icon, count, url) VALUES
-('1', '文案生成', 'file', 5, '/category/copywriting'),
-('2', '代码助手', 'sparkles', 3, '/category/coding'),
-('3', '翻译工具', 'file', 2, '/category/translation'),
-('4', '数据分析', 'file', 4, '/category/analysis');
+INSERT INTO prompt_categories (id, title, icon, count, url, created_by, username) VALUES
+('1', '文案生成', 'file', 5, '/category/copywriting', 'system', 'system'),
+('2', '代码助手', 'sparkles', 3, '/category/coding', 'system', 'system'),
+('3', '翻译工具', 'file', 2, '/category/translation', 'system', 'system'),
+('4', '数据分析', 'file', 4, '/category/analysis', 'system', 'system');
 
 
 -- favorites (收藏夹)

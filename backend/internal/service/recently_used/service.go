@@ -17,8 +17,8 @@ var (
 )
 
 type IService interface {
-	RecordUsage(ctx context.Context, req dto.RecordUsageDTO) (*model.RecentlyUsed, error)
-	RemoveRecord(ctx context.Context, req dto.RemoveRecentlyUsedDTO) error
+	RecordUsage(ctx context.Context, userID int64, req dto.RecordUsageDTO) (*model.RecentlyUsed, error)
+	RemoveRecord(ctx context.Context, userID int64, req dto.RemoveRecentlyUsedDTO) error
 	ListRecentlyUsed(ctx context.Context, userID int64, offset, limit int) ([]*model.RecentlyUsedWithPrompt, int64, error)
 	CleanOldRecords(ctx context.Context, userID int64, keepCount int) error
 }
@@ -35,10 +35,10 @@ func CreateRecentlyUsedService(repo *recently_used.Repo, logger *zap.Logger) *Se
 	}
 }
 
-func (s *Service) RecordUsage(ctx context.Context, req dto.RecordUsageDTO) (*model.RecentlyUsed, error) {
+func (s *Service) RecordUsage(ctx context.Context, userID int64, req dto.RecordUsageDTO) (*model.RecentlyUsed, error) {
 	rec := &model.RecentlyUsed{
 		ID:       uuid.New().String(),
-		UserID:   req.UserID,
+		UserID:   userID,
 		PromptID: req.PromptID,
 	}
 
@@ -48,16 +48,15 @@ func (s *Service) RecordUsage(ctx context.Context, req dto.RecordUsageDTO) (*mod
 		return nil, ErrDatabaseErr
 	}
 
-	// 清理旧记录，保留最近的50条
-	if err := s.repo.DeleteOldByUser(ctx, req.UserID, DefaultKeepCount); err != nil {
+	if err := s.repo.DeleteOldByUser(ctx, userID, DefaultKeepCount); err != nil {
 		s.logger.Warn("failed to clean old records", zap.Error(err))
 	}
 
 	return rec, nil
 }
 
-func (s *Service) RemoveRecord(ctx context.Context, req dto.RemoveRecentlyUsedDTO) error {
-	err := s.repo.DeleteByUserAndPrompt(ctx, req.UserID, req.PromptID)
+func (s *Service) RemoveRecord(ctx context.Context, userID int64, req dto.RemoveRecentlyUsedDTO) error {
+	err := s.repo.DeleteByUserAndPrompt(ctx, userID, req.PromptID)
 	if err != nil {
 		s.logger.Error(err.Error())
 		return ErrDatabaseErr

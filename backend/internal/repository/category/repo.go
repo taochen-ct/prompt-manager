@@ -31,10 +31,10 @@ func (r *Repo) Create(ctx context.Context, c *model.Category) (*model.Category, 
 	c.UpdatedAt = now
 	c.Count = 0
 	query := `
-		INSERT INTO prompt_categories (
-			id, title, icon, count, url, created_at, updated_at
+		INSERT INTO categories (
+			id, title, icon, count, url, username, created_by, created_at, updated_at
 		) VALUES (
-			:id, :title, :icon, :count, :url, :created_at, :updated_at
+			:id, :title, :icon, :count, :url, :username, :created_by, :created_at, :updated_at
 		)
 	`
 	_, err := r.db.NamedExecContext(ctx, query, c)
@@ -46,7 +46,7 @@ func (r *Repo) Create(ctx context.Context, c *model.Category) (*model.Category, 
 
 func (r *Repo) Update(ctx context.Context, c *model.Category) error {
 	const query = `
-		UPDATE prompt_categories
+		UPDATE categories
 		SET
 			title = :title,
 			icon = :icon,
@@ -62,7 +62,7 @@ func (r *Repo) Update(ctx context.Context, c *model.Category) error {
 func (r *Repo) GetByID(ctx context.Context, id string) (*model.Category, error) {
 	const query = `
 		SELECT id, title, icon, count, url, created_at, updated_at
-		FROM prompt_categories
+		FROM categories
 		WHERE id = ?
 	`
 	var c model.Category
@@ -76,7 +76,7 @@ func (r *Repo) GetByID(ctx context.Context, id string) (*model.Category, error) 
 func (r *Repo) List(ctx context.Context) ([]*model.Category, error) {
 	const query = `
 		SELECT id, title, icon, count, url, created_at, updated_at
-		FROM prompt_categories
+		FROM categories
 		ORDER BY created_at ASC
 	`
 	var list []*model.Category
@@ -86,7 +86,7 @@ func (r *Repo) List(ctx context.Context) ([]*model.Category, error) {
 
 func (r *Repo) DeleteByID(ctx context.Context, id string) error {
 	const query = `
-		DELETE FROM prompt_categories
+		DELETE FROM categories
 		WHERE id = ?
 	`
 	_, err := r.db.ExecContext(ctx, query, id)

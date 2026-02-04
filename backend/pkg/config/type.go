@@ -21,7 +21,8 @@ type Config struct {
 		DefaultHtml string `mapstructure:"defaultHtml" yaml:"defaultHtml"`
 	} `mapstructure:"web" yaml:"web"`
 	Security struct {
-		SecretKey string `mapstructure:"secretKey" yaml:"secretKey"`
+		SecretKey       string `mapstructure:"secretKey" yaml:"secretKey"`
+		TokenExpireHour int    `mapstructure:"tokenExpireHour" yaml:"tokenExpireHour"`
 	} `mapstructure:"security" yaml:"security"`
 	DB DBConfig `mapstructure:"db" yaml:"db"`
 }

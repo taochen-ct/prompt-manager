@@ -1,7 +1,8 @@
--- version
+-- users
 CREATE TABLE IF NOT EXISTS users (
     id BIGSERIAL PRIMARY KEY,
     username VARCHAR(64) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
     nickname VARCHAR(64) NOT NULL DEFAULT '',
     department VARCHAR(64) NOT NULL DEFAULT '',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -58,15 +59,17 @@ CREATE TABLE prompt_categories (
     icon VARCHAR(50) NOT NULL,
     count INTEGER NOT NULL DEFAULT 0,
     url VARCHAR(255) NOT NULL,
+    created_by VARCHAR(64) NOT NULL,
+    username VARCHAR(64) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-INSERT INTO prompt_categories (id, title, icon, count, url) VALUES
-('1', '文案生成', 'file', 5, '/category/copywriting'),
-('2', '代码助手', 'sparkles', 3, '/category/coding'),
-('3', '翻译工具', 'file', 2, '/category/translation'),
-('4', '数据分析', 'file', 4, '/category/analysis');
+INSERT INTO prompt_categories (id, title, icon, count, url, created_by, username) VALUES
+('1', '文案生成', 'file', 5, '/category/copywriting', 'system', 'system'),
+('2', '代码助手', 'sparkles', 3, '/category/coding', 'system', 'system'),
+('3', '翻译工具', 'file', 2, '/category/translation', 'system', 'system'),
+('4', '数据分析', 'file', 4, '/category/analysis', 'system', 'system');
 
 
 -- favorites (收藏夹)

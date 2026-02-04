@@ -16,6 +16,7 @@ func SetupRouter(
 	loggerMiddleware *middleware.Logger,
 	recoveryMiddleware *middleware.Recovery,
 	corsMiddleware *middleware.Cors,
+	jwtMiddleware *middleware.JWTMiddleware,
 	userHandler *handler.UserHandler,
 	promptHandler *handler.PromptHandler,
 	versionHandler *handler.PromptVersionHandler,
@@ -52,67 +53,72 @@ func SetupRouter(
 		})
 	}
 
-	// user api collections
+	// user api collections (公开接口不需要 JWT)
 	userAPI := api.Group("/user")
 	{
+		userAPI.POST("/login", userHandler.Login)
+		userAPI.POST("/logout", userHandler.Logout)
 		userAPI.POST("/create", userHandler.CreateUser)
 		userAPI.POST("/delete", userHandler.DeleteUser)
 		userAPI.GET("/info/:id", userHandler.GetUser)
 		userAPI.POST("/update/:id", userHandler.UpdateUser)
 	}
 
-	// prompt api collections
-	promptAPI := api.Group("/prompt")
+	// 需要 JWT 认证的路由
+	authAPI := api.Group("")
+	authAPI.Use(jwtMiddleware.Handler())
 	{
-		promptAPI.POST("/create", promptHandler.Create)
-		promptAPI.GET("/info/:id", promptHandler.GetPromptByID)
-		promptAPI.GET("/content/*path", promptHandler.GetPromptByPath)
-		promptAPI.POST("/update", promptHandler.Update)
-		promptAPI.POST("/delete/:id", promptHandler.Delete)
-		promptAPI.GET("/list", promptHandler.List)
-	}
+		// prompt api
+		promptAPI := authAPI.Group("/prompt")
+		{
+			promptAPI.POST("/create", promptHandler.Create)
+			promptAPI.GET("/info/:id", promptHandler.GetPromptByID)
+			promptAPI.GET("/content/*path", promptHandler.GetPromptByPath)
+			promptAPI.POST("/update", promptHandler.Update)
+			promptAPI.POST("/delete/:id", promptHandler.Delete)
+			promptAPI.GET("/list", promptHandler.List)
+		}
 
-	// prompt version api collections
-	versionAPI := api.Group("/version")
-	{
-		versionAPI.POST("/create", versionHandler.Create)
-		versionAPI.GET("/info/:id", versionHandler.GetByID)
-		versionAPI.GET("/prompt/:promptId", versionHandler.GetByPromptID)
-		versionAPI.GET("/prompt/:promptId/latest", versionHandler.GetLatestByPromptID)
-		versionAPI.POST("/update", versionHandler.Update)
-		versionAPI.POST("/delete/:id", versionHandler.Delete)
-		versionAPI.GET("/list", versionHandler.List)
-	}
+		// prompt version api
+		versionAPI := authAPI.Group("/version")
+		{
+			versionAPI.POST("/create", versionHandler.Create)
+			versionAPI.GET("/info/:id", versionHandler.GetByID)
+			versionAPI.GET("/prompt/:promptId", versionHandler.GetByPromptID)
+			versionAPI.GET("/prompt/:promptId/latest", versionHandler.GetLatestByPromptID)
+			versionAPI.POST("/update", versionHandler.Update)
+			versionAPI.POST("/delete/:id", versionHandler.Delete)
+			versionAPI.GET("/list", versionHandler.List)
+		}
 
-	// category api collections
-	categoryAPI := api.Group("/category")
-	{
-		categoryAPI.POST("/create", categoryHandler.Create)
-		categoryAPI.GET("/info/:id", categoryHandler.GetByID)
-		categoryAPI.GET("/list", categoryHandler.List)
-		categoryAPI.POST("/update", categoryHandler.Update)
-		categoryAPI.POST("/delete/:id", categoryHandler.Delete)
-	}
+		// category api
+		categoryAPI := authAPI.Group("/category")
+		{
+			categoryAPI.POST("/create", categoryHandler.Create)
+			categoryAPI.GET("/info/:id", categoryHandler.GetByID)
+			categoryAPI.GET("/list", categoryHandler.List)
+			categoryAPI.POST("/update", categoryHandler.Update)
+			categoryAPI.POST("/delete/:id", categoryHandler.Delete)
+		}
 
-	// favorites api collections
-	favoritesAPI := api.Group("/favorites")
-	{
-		favoritesAPI.POST("/add", favoriteHandler.Add)
-		favoritesAPI.POST("/remove", favoriteHandler.Remove)
-		favoritesAPI.POST("/check", favoriteHandler.Check)
-		favoritesAPI.GET("/list", favoriteHandler.List)
-	}
+		// favorites api
+		favoritesAPI := authAPI.Group("/favorites")
+		{
+			favoritesAPI.POST("/add", favoriteHandler.Add)
+			favoritesAPI.POST("/remove", favoriteHandler.Remove)
+			favoritesAPI.POST("/check", favoriteHandler.Check)
+			favoritesAPI.GET("/list", favoriteHandler.List)
+		}
 
-	// recently used api collections
-	recentlyUsedAPI := api.Group("/recently-used")
-	{
-		recentlyUsedAPI.POST("/record", recentlyUsedHandler.Record)
-		recentlyUsedAPI.POST("/remove", recentlyUsedHandler.Remove)
-		recentlyUsedAPI.GET("/list", recentlyUsedHandler.List)
-		recentlyUsedAPI.POST("/clean", recentlyUsedHandler.Clean)
+		// recently used api
+		recentlyUsedAPI := authAPI.Group("/recently-used")
+		{
+			recentlyUsedAPI.POST("/record", recentlyUsedHandler.Record)
+			recentlyUsedAPI.POST("/remove", recentlyUsedHandler.Remove)
+			recentlyUsedAPI.GET("/list", recentlyUsedHandler.List)
+			recentlyUsedAPI.POST("/clean", recentlyUsedHandler.Clean)
+		}
 	}
-
-	// ...
 
 	return r
 }
