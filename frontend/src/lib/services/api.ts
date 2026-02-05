@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:8080/api/v1';
+const API_PREFIX = '/api/v1';
 
 export interface ApiResponse<T> {
   code: number;
@@ -94,7 +94,7 @@ class ApiService {
       endpoint: string,
       options: RequestInit = {}
   ): Promise<T> {
-    const url = `${API_BASE}${endpoint}`;
+    const url = `${API_PREFIX}${endpoint}`;
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -185,7 +185,7 @@ class ApiService {
     username: string;
     path?: string;
     category?: string;
-  }) {
+  }): Promise<Prompt> {
     return this.request('/prompt/create', {
       method: 'POST',
       body: JSON.stringify({
@@ -237,8 +237,8 @@ class ApiService {
     promptId: string;
     version: string;
     content: string;
-    variables?: string;
-    changeLog?: string;
+    variables?: string | null ;
+    changeLog?: string | null;
     createdBy: string;
     username: string;
     isPublish?: boolean;

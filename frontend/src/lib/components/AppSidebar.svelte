@@ -43,8 +43,8 @@
   let newPrompt = $state({
     name: '',
     path: '',
-    createdBy: 'user-1',
-    username: 'Admin'
+    createdBy: auth.getUser()?.username as string,
+    username: auth.getUser()?.nickname as string,
   });
 
   // Auth state
@@ -74,13 +74,18 @@
 
   async function handleCreatePrompt() {
     try {
-      await api.createPrompt(newPrompt);
+      const res = await api.createPrompt(newPrompt);
       toast.success($t('action.save') as string, {
         description: 'Prompt created successfully'
       });
       createDialogOpen = false;
-      newPrompt = {name: '', path: '', createdBy: 'user-1', username: 'Admin'};
-      await goto("/", {})
+      newPrompt = {
+        name: '',
+        path: '',
+        createdBy: auth.getUser()?.username as string,
+        username: auth.getUser()?.nickname as string
+      };
+      await goto(`/editor/${res.id}`, {})
     } catch (error) {
       toast.error($t('action.confirm') as string, {
         description: 'Failed to create prompt'
@@ -218,7 +223,8 @@
                     class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
                   <div class="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <span class="text-xs font-medium">{currentUser?.nickname?.charAt(0) || currentUser?.username?.charAt(0) || 'U'}</span>
+                    <span
+                        class="text-xs font-medium">{currentUser?.nickname?.charAt(0) || currentUser?.username?.charAt(0) || 'U'}</span>
                   </div>
                   <span class="font-medium">{currentUser?.nickname || currentUser?.username}</span>
                   <ChevronUp class="ms-auto h-4 w-4"/>
@@ -243,7 +249,8 @@
     {:else}
       <Sidebar.Menu>
         <Sidebar.MenuItem>
-          <a href="/login" class="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
+          <a href="/login"
+             class="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
             <div class="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">
               <span class="text-xs font-medium">?</span>
             </div>

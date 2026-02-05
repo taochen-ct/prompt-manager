@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { t } from 'svelte-i18n';
+  import {t} from 'svelte-i18n';
   import * as Table from '$lib/components/ui/table/index.js';
-  import { Button } from '$lib/components/ui/button';
+  import {Button} from '$lib/components/ui/button';
   import Badge from '$lib/components/ui/badge/badge.svelte';
-  import { Star, MoreHorizontal, Edit, Trash2, Eye, EyeOff } from 'lucide-svelte';
+  import {Star, MoreHorizontal, Edit, Trash2, Eye, EyeOff} from 'lucide-svelte';
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 
   interface Prompt {
@@ -27,7 +27,7 @@
     onToggleFavorite?: (prompt: Prompt) => void;
   }
 
-  let { prompts, showFavorite = false, ondelete, onTogglePublish, onToggleFavorite }: Props = $props();
+  let {prompts, showFavorite = false, ondelete, onTogglePublish, onToggleFavorite}: Props = $props();
 
   function handleDelete(id: string) {
     ondelete?.(id);
@@ -64,10 +64,10 @@
           {#if showFavorite}
             <Table.Cell>
               <button
-                class="flex items-center justify-center {prompt.isFavorite ? 'text-yellow-500' : 'text-muted-foreground hover:text-yellow-500'}"
-                onclick={() => handleFavorite(prompt)}
+                  class="flex items-center justify-center {prompt.isFavorite ? 'text-yellow-500' : 'text-muted-foreground hover:text-yellow-500'}"
+                  onclick={() => handleFavorite(prompt)}
               >
-                <Star class="h-4 w-4" fill={prompt.isFavorite ? 'currentColor' : 'none'} />
+                <Star class="h-4 w-4" fill={prompt.isFavorite ? 'currentColor' : 'none'}/>
               </button>
             </Table.Cell>
           {/if}
@@ -85,28 +85,26 @@
             <DropdownMenu.Root>
               <DropdownMenu.Trigger>
                 <Button variant="ghost" size="icon" class="h-8 w-8">
-                  <MoreHorizontal class="h-4 w-4" />
+                  <MoreHorizontal class="h-4 w-4"/>
                 </Button>
               </DropdownMenu.Trigger>
               <DropdownMenu.Content align="end">
                 <DropdownMenu.Item onclick={() => handlePublish(prompt)}>
                   {#if prompt.isPublish}
-                    <EyeOff class="mr-2 h-4 w-4" />
+                    <EyeOff class="mr-2 h-4 w-4"/>
                     {$t('version.unpublish')}
                   {:else}
-                    <Eye class="mr-2 h-4 w-4" />
+                    <Eye class="mr-2 h-4 w-4"/>
                     {$t('version.publish')}
                   {/if}
                 </DropdownMenu.Item>
                 <DropdownMenu.Item>
-                  <a href="/editor/{prompt.id}" class="flex items-center">
-                    <Edit class="mr-2 h-4 w-4" />
-                    {$t('prompt.edit')}
-                  </a>
+                  <Edit class="mr-2 h-4 w-4" />
+                  <a href="/editor/{prompt.id}">{$t('prompt.edit')}</a>
                 </DropdownMenu.Item>
-                <DropdownMenu.Separator />
+                <DropdownMenu.Separator/>
                 <DropdownMenu.Item class="text-destructive" onclick={() => handleDelete(prompt.id)}>
-                  <Trash2 class="mr-2 h-4 w-4" />
+                  <Trash2 class="mr-2 h-4 w-4"/>
                   {$t('prompt.delete')}
                 </DropdownMenu.Item>
               </DropdownMenu.Content>

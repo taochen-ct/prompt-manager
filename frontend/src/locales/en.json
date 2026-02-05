@@ -51,7 +51,15 @@
     "unpublish": "Unpublish",
     "latest": "Latest",
     "noVersions": "No versions yet",
-    "createFirst": "Create your first version"
+    "createFirst": "Create your first version",
+    "isPublish": "Is publish",
+    "dialog": {
+      "description": "Create a new version for this prompt."
+    },
+    "editor": {
+      "history": "Version History",
+      "content": "Content"
+    }
   },
   "action": {
     "save": "Save",

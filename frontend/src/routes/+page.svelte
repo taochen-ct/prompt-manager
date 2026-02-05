@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { t } from 'svelte-i18n';
-  import { toast } from 'svelte-sonner';
-  import { api} from '$lib/services/api';
+  import {t} from 'svelte-i18n';
+  import {toast} from 'svelte-sonner';
+  import {api} from '$lib/services/api';
   import type {Prompt, PromptList} from "$lib/services/api";
-  import { Button } from '$lib/components/ui/button';
-  import { Input } from '$lib/components/ui/input';
+  import {Button} from '$lib/components/ui/button';
+  import {Input} from '$lib/components/ui/input';
   import * as Dialog from '$lib/components/ui/dialog';
   import PromptTable from '$lib/components/PromptTable.svelte';
-  import { Plus, Search } from 'lucide-svelte';
+  import {Plus, Search} from 'lucide-svelte';
 
 
   let prompts = $state<Prompt[]>([]);
@@ -17,9 +17,8 @@
   async function loadPrompts() {
     try {
       loading = true;
-      const data = await api.getPromptList({ offset: 0, limit: 100 });
+      const data = await api.getPromptList({offset: 0, limit: 100});
       prompts = data.list as Prompt[];
-      console.log(prompts);
     } catch (error) {
       console.error('Failed to load prompts:', error);
       toast.error($t('action.confirm') as string, {
@@ -73,15 +72,15 @@
   }
 
   async function handleToggleFavoriteAsync(prompt: Prompt) {
-    await api.toggleFavorite(prompt.id);
+    await api.addFavorite({promptId: prompt.id});
     await loadPrompts();
   }
 
   let filteredPrompts = $derived(
-    prompts.filter(p =>
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.path.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+      prompts.filter(p =>
+          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.path.toLowerCase().includes(searchQuery.toLowerCase())
+      )
   );
 
   $effect(() => {
@@ -97,7 +96,9 @@
     </div>
   {:else if filteredPrompts.length === 0}
     <div class="flex flex-col items-center justify-center py-12 text-center">
-      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="mb-4 text-muted-foreground">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+           class="mb-4 text-muted-foreground">
         <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
         <polyline points="14 2 14 8 20 8"/>
         <line x1="12" x2="12" y1="18" y2="18"/>
@@ -108,11 +109,11 @@
     </div>
   {:else}
     <PromptTable
-      prompts={filteredPrompts}
-      showFavorite={true}
-      ondelete={handleDeletePrompt}
-      onTogglePublish={handlePublishToggle}
-      onToggleFavorite={handleToggleFavorite}
+        prompts={filteredPrompts}
+        showFavorite={true}
+        ondelete={handleDeletePrompt}
+        onTogglePublish={handlePublishToggle}
+        onToggleFavorite={handleToggleFavorite}
     />
   {/if}
 </div>

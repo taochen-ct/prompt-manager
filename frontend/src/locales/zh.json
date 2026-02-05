@@ -51,7 +51,15 @@
     "unpublish": "取消发布",
     "latest": "最新",
     "noVersions": "暂无版本",
-    "createFirst": "创建你的第一个版本"
+    "createFirst": "创建你的第一个版本",
+    "isPublish": "是否发布",
+    "dialog": {
+      "description": "给提示词创建版本"
+    },
+    "editor": {
+      "history": "版本历史",
+      "content": "内容"
+    }
   },
   "action": {
     "save": "保存",
