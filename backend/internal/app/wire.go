@@ -50,6 +50,7 @@ func wireApp(*config.Config, *lumberjack.Logger, *zap.Logger) (*App, func(), err
 			middleware.CreateRecoveryMiddleware,
 			middleware.CreateLoggerMiddleware,
 			middleware.CreateCORSMiddleware,
+			middleware.CreateJWTMiddleware,
 			router.SetupRouter,
 			createHttpServer,
 			createApp,

@@ -4,6 +4,7 @@ import (
 	"backend/internal/api/dto"
 	"backend/internal/model"
 	"backend/internal/repository/prompt"
+	"backend/internal/repository/version"
 	"context"
 	"errors"
 	"github.com/google/uuid"
@@ -27,14 +28,16 @@ type IService interface {
 }
 
 type Service struct {
-	repo   *prompt.Repo
-	logger *zap.Logger
+	repo        *prompt.Repo
+	versionRepo *version.Repo
+	logger      *zap.Logger
 }
 
-func CreatePromptService(repo *prompt.Repo, logger *zap.Logger) *Service {
+func CreatePromptService(repo *prompt.Repo, logger *zap.Logger, versionRepo *version.Repo) *Service {
 	return &Service{
-		repo:   repo,
-		logger: logger,
+		repo:        repo,
+		versionRepo: versionRepo,
+		logger:      logger,
 	}
 }
 
@@ -122,5 +125,10 @@ func (s *Service) DeleteByID(ctx context.Context, id string) error {
 		s.logger.Error(err.Error())
 		return ErrDatabaseErr
 	}
+	go func() {
+		if versionErr := s.versionRepo.DeleteByPromptId(ctx, old.ID); versionErr != nil {
+			s.logger.Error("failed to delete prompt version", zap.Error(versionErr), zap.String("prompt_id", old.ID))
+		}
+	}()
 	return nil
 }

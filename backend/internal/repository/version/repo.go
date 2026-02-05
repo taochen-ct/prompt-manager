@@ -140,3 +140,12 @@ func (r *Repo) DeleteByID(ctx context.Context, id string) error {
 	_, err := r.db.ExecContext(ctx, query, id)
 	return err
 }
+
+func (r *Repo) DeleteByPromptId(ctx context.Context, promptId string) error {
+	const query = `
+		DELETE FROM prompt_version
+		WHERE prompt_id = ?
+	`
+	_, err := r.db.ExecContext(ctx, query, promptId)
+	return err
+}

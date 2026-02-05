@@ -99,6 +99,13 @@ func (s *Service) Update(ctx context.Context, v *model.PromptVersion) error {
 	}
 
 	v.BaseModel.CreatedAt = old.CreatedAt
+	// 如果发布版本，同步更新prompt原数据
+	if v.IsPublish {
+		if err := s.updatePromptMeta(ctx, v.PromptID, v.ID, v.IsPublish); err != nil {
+			s.logger.Error("failed to update prompt meta: " + err.Error())
+			// 不返回错误，因为version已创建成功
+		}
+	}
 
 	return s.repo.Update(ctx, v)
 }

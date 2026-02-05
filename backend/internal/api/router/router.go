@@ -51,6 +51,7 @@ func SetupRouter(
 		api.GET("/ping", func(c *gin.Context) {
 			response.Success(c, "pong")
 		})
+		api.GET("/prompt/content/*path", promptHandler.GetPromptByPath)
 	}
 
 	// user api collections (公开接口不需要 JWT)
@@ -73,7 +74,6 @@ func SetupRouter(
 		{
 			promptAPI.POST("/create", promptHandler.Create)
 			promptAPI.GET("/info/:id", promptHandler.GetPromptByID)
-			promptAPI.GET("/content/*path", promptHandler.GetPromptByPath)
 			promptAPI.POST("/update", promptHandler.Update)
 			promptAPI.POST("/delete/:id", promptHandler.Delete)
 			promptAPI.GET("/list", promptHandler.List)
