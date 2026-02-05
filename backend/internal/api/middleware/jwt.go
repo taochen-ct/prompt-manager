@@ -1,11 +1,12 @@
 package middleware
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
 	"backend/pkg/config"
-	"backend/pkg/errors"
+	customeErr "backend/pkg/errors"
 	"backend/pkg/jwt"
 	"backend/pkg/response"
 	"github.com/gin-gonic/gin"
@@ -36,7 +37,7 @@ func (m *JWTMiddleware) Handler() gin.HandlerFunc {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			response.Error(c, http.StatusUnauthorized, response.Response{
-				Code:    errors.DefaultError,
+				Code:    customeErr.DefaultError,
 				Data:    nil,
 				Message: "missing authorization header",
 			})
@@ -48,7 +49,7 @@ func (m *JWTMiddleware) Handler() gin.HandlerFunc {
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			response.Error(c, http.StatusUnauthorized, response.Response{
-				Code:    errors.DefaultError,
+				Code:    customeErr.DefaultError,
 				Data:    nil,
 				Message: "invalid authorization header format",
 			})
@@ -62,11 +63,11 @@ func (m *JWTMiddleware) Handler() gin.HandlerFunc {
 		claims, err := jwt.ValidateToken(tokenString, m.secret)
 		if err != nil {
 			message := "invalid token"
-			if err == jwt.ErrTokenExpired {
+			if errors.Is(err, jwt.ErrTokenExpired) {
 				message = "token has expired"
 			}
 			response.Error(c, http.StatusUnauthorized, response.Response{
-				Code:    errors.DefaultError,
+				Code:    customeErr.DefaultError,
 				Data:    nil,
 				Message: message,
 			})
