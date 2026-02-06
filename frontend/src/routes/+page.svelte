@@ -2,7 +2,7 @@
   import {t} from 'svelte-i18n';
   import {toast} from 'svelte-sonner';
   import {api} from '$lib/services/api';
-  import type {Prompt, PromptList} from "$lib/services/api";
+  import type {Prompt, PromptList} from "$lib/services/type";
   import {Button} from '$lib/components/ui/button';
   import {Input} from '$lib/components/ui/input';
   import * as Dialog from '$lib/components/ui/dialog';

@@ -33,7 +33,7 @@
   import * as Collapsible from "$lib/components/ui/collapsible/index.js";
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
   import {api, auth} from "$lib/services/api";
-  import type {Category} from "$lib/services/api";
+  import type {Category} from "$lib/services/type";
   import {toast} from "svelte-sonner";
   import {onMount} from "svelte";
 
