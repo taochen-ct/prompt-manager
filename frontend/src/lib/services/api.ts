@@ -26,7 +26,15 @@ export interface Prompt {
   isFavorite?: boolean;
 }
 
-export interface PromptList{
+export interface Category {
+  id: string;
+  title: string;
+  icon: string;
+  count: number;
+  url: string;
+}
+
+export interface PromptList {
   list: Prompt[];
   page: number;
   total: number;
@@ -87,7 +95,7 @@ export const auth = {
 };
 
 // Endpoints that don't require authorization
-const PUBLIC_ENDPOINTS = ['/user/login', '/user/create', '/ping'];
+const PUBLIC_ENDPOINTS = ['/user/login', '/user/create', '/ping', '/prompt/content'];
 
 class ApiService {
   private async request<T>(
@@ -237,7 +245,7 @@ class ApiService {
     promptId: string;
     version: string;
     content: string;
-    variables?: string | null ;
+    variables?: string | null;
     changeLog?: string | null;
     createdBy: string;
     username: string;
@@ -371,7 +379,7 @@ class ApiService {
     return this.request(`/category/info/${id}`);
   }
 
-  async getCategoryList() {
+  async getCategoryList(): Promise<Category[]> {
     return this.request('/category/list');
   }
 
@@ -396,7 +404,7 @@ class ApiService {
 
   // Category-based queries
   async getPromptsByCategory(category: string): Promise<any[]> {
-    const allPrompts = await this.getPromptList({ offset: 0, limit: 100});
+    const allPrompts = await this.getPromptList({offset: 0, limit: 100});
     return allPrompts.list.filter(p =>
         p.path.toLowerCase().includes(category.toLowerCase()) ||
         p.name.toLowerCase().includes(category.toLowerCase())

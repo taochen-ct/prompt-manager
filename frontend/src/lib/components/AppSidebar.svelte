@@ -33,7 +33,9 @@
   import * as Collapsible from "$lib/components/ui/collapsible/index.js";
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
   import {api, auth} from "$lib/services/api";
+  import type {Category} from "$lib/services/api";
   import {toast} from "svelte-sonner";
+  import {onMount} from "svelte";
 
   interface Props {
     className?: string;
@@ -64,13 +66,8 @@
   }
 
 
-  let promptCategories = $state([
-    {id: '1', title: '文案生成', icon: 'file', count: 5, url: '/category/copywriting'},
-    {id: '2', title: '代码助手', icon: 'sparkles', count: 3, url: '/category/coding'},
-    {id: '3', title: '翻译工具', icon: 'file', count: 2, url: '/category/translation'},
-    {id: '4', title: '数据分析', icon: 'file', count: 4, url: '/category/analysis'},
-  ]);
-  let createDialogOpen = $state(false);
+  let promptCategories = $state<Category[]>([]);
+  let createDialogOpen = $state<boolean>(false);
 
   async function handleCreatePrompt() {
     try {
@@ -101,6 +98,10 @@
     };
     return iconMap[iconName] || FileText;
   }
+
+  onMount(async () => {
+    promptCategories = await api.getCategoryList();
+  });
 </script>
 
 <Sidebar.Root class={className}>
