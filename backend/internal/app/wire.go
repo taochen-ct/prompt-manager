@@ -17,6 +17,7 @@ import (
 	favoritesService "backend/internal/service/favorites"
 	promptService "backend/internal/service/prompt"
 	recentlyUsedService "backend/internal/service/recently_used"
+	remoteLogService "backend/internal/service/remote_log"
 	userService "backend/internal/service/user"
 	versionService "backend/internal/service/version"
 	"backend/pkg/config"
@@ -47,6 +48,8 @@ func wireApp(*config.Config, *lumberjack.Logger, *zap.Logger) (*App, func(), err
 			versionService.CreateVersionService,
 			handler.CreatePromptHandler,
 			handler.CreatePromptVersionHandler,
+			remoteLogService.CreateLogService,
+			handler.CreateRemoteLogHandler,
 			middleware.CreateRecoveryMiddleware,
 			middleware.CreateLoggerMiddleware,
 			middleware.CreateCORSMiddleware,

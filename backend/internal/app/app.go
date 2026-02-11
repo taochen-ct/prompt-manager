@@ -21,6 +21,7 @@ type App struct {
 	db      *sqlx.DB
 	conf    *config.Config
 	logger  *zap.Logger
+	proxy   *ProxyServer
 	httpSrv *http.Server
 }
 
@@ -83,11 +84,19 @@ func Run() {
 	}
 	defer cleanup()
 
+	// 统一 context
+	proxyCtx, proxyCancel := context.WithCancel(context.Background())
+	defer proxyCancel()
+
 	// 启动应用
 	log.Printf("start app %s ...", app.conf.Server.Port)
 	if err = app.Start(); err != nil {
 		panic(err)
 	}
+
+	// 启动模型代理服务
+	proxy := CreateProxyServer(cfg.Proxy)
+	go proxy.Start(proxyCtx)
 
 	// 等待中断信号以优雅地关闭应用
 	quit := make(chan os.Signal)
@@ -95,6 +104,7 @@ func Run() {
 	<-quit
 
 	log.Printf("shutdown app %s ...", app.conf.Server.Port)
+	proxyCancel()
 
 	// 设置 5 秒的超时时间
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

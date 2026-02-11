@@ -20,6 +20,7 @@ import (
 	favorites2 "backend/internal/service/favorites"
 	prompt2 "backend/internal/service/prompt"
 	recently_used2 "backend/internal/service/recently_used"
+	"backend/internal/service/remote_log"
 	user2 "backend/internal/service/user"
 	version2 "backend/internal/service/version"
 	"backend/pkg/config"
@@ -36,7 +37,7 @@ import (
 // Injectors from wire.go:
 
 func wireApp(configConfig *config.Config, logger *lumberjack.Logger, zapLogger *zap.Logger) (*App, func(), error) {
-	db, err := createDB(configConfig)
+	db, cleanup, err := createDB(configConfig)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -62,12 +63,18 @@ func wireApp(configConfig *config.Config, logger *lumberjack.Logger, zapLogger *
 	recently_usedRepo := recently_used.CreateRecentlyUsedRepo(db)
 	recently_usedService := recently_used2.CreateRecentlyUsedService(recently_usedRepo, zapLogger)
 	recentlyUsedHandler := handler.CreateRecentlyUsedHandler(recently_usedService)
-	engine := router.SetupRouter(configConfig, middlewareLogger, recovery, cors, jwtMiddleware, userHandler, promptHandler, promptVersionHandler, categoryHandler, favoriteHandler, recentlyUsedHandler)
+	logService, cleanup2 := remote_log.CreateLogService(configConfig, zapLogger)
+	remoteLogHandler := handler.CreateRemoteLogHandler(zapLogger, logService)
+	engine := router.SetupRouter(configConfig, middlewareLogger, recovery, cors, jwtMiddleware, userHandler, promptHandler, promptVersionHandler, categoryHandler, favoriteHandler, recentlyUsedHandler, remoteLogHandler)
 	server := createHttpServer(configConfig, engine)
 	app, err := createApp(db, configConfig, zapLogger, server)
 	if err != nil {
+		cleanup2()
+		cleanup()
 		return nil, nil, err
 	}
 	return app, func() {
+		cleanup2()
+		cleanup()
 	}, nil
 }

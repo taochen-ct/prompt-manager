@@ -15,7 +15,7 @@ import (
 	"backend/pkg/config"
 )
 
-func createDB(cfg *config.Config) (*sqlx.DB, error) {
+func createDB(cfg *config.Config) (*sqlx.DB, func(), error) {
 	switch cfg.DB.Driver {
 	case "sqlite":
 		return createSQLiteDB(cfg)
@@ -24,19 +24,22 @@ func createDB(cfg *config.Config) (*sqlx.DB, error) {
 	case "postgres":
 		return createPostgresDB(cfg)
 	default:
-		return nil, fmt.Errorf("unsupported db driver: %s", cfg.DB.Driver)
+		return nil, nil, fmt.Errorf("unsupported db driver: %s", cfg.DB.Driver)
 	}
 }
 
-func createSQLiteDB(cfg *config.Config) (*sqlx.DB, error) {
+func createSQLiteDB(cfg *config.Config) (*sqlx.DB, func(), error) {
 	if err := common.EnsurePath(cfg.DB.SQLite.Path); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	dsn := fmt.Sprintf("file:%s?_foreign_keys=off", cfg.DB.SQLite.Path)
 
 	db, err := sqlx.Open("sqlite3", dsn)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+	}
+	cleanup := func() {
+		db.Close()
 	}
 	pragmas := []string{
 		"PRAGMA journal_mode = WAL;",
@@ -47,7 +50,7 @@ func createSQLiteDB(cfg *config.Config) (*sqlx.DB, error) {
 
 	for _, p := range pragmas {
 		if _, err := db.Exec(p); err != nil {
-			return nil, err
+			return nil, cleanup, err
 		}
 	}
 
@@ -56,13 +59,13 @@ func createSQLiteDB(cfg *config.Config) (*sqlx.DB, error) {
 	db.SetMaxIdleConns(1)
 
 	if err := db.Ping(); err != nil {
-		return nil, err
+		return nil, cleanup, err
 	}
 
-	return db, nil
+	return db, cleanup, nil
 }
 
-func createMySQLDB(cfg *config.Config) (*sqlx.DB, error) {
+func createMySQLDB(cfg *config.Config) (*sqlx.DB, func(), error) {
 	c := cfg.DB.MySQL
 
 	dsn := fmt.Sprintf(
@@ -77,20 +80,23 @@ func createMySQLDB(cfg *config.Config) (*sqlx.DB, error) {
 
 	db, err := sqlx.Open("mysql", dsn)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+	}
+	cleanup := func() {
+		db.Close()
 	}
 
 	db.SetMaxOpenConns(20)
 	db.SetMaxIdleConns(10)
 
 	if err := db.Ping(); err != nil {
-		return nil, err
+		return nil, cleanup, err
 	}
 
-	return db, nil
+	return db, cleanup, nil
 }
 
-func createPostgresDB(cfg *config.Config) (*sqlx.DB, error) {
+func createPostgresDB(cfg *config.Config) (*sqlx.DB, func(), error) {
 	c := cfg.DB.Postgres
 
 	dsn := fmt.Sprintf(
@@ -105,17 +111,20 @@ func createPostgresDB(cfg *config.Config) (*sqlx.DB, error) {
 
 	db, err := sqlx.Open("postgres", dsn)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+	}
+	cleanup := func() {
+		db.Close()
 	}
 
 	db.SetMaxOpenConns(20)
 	db.SetMaxIdleConns(10)
 
 	if err := db.Ping(); err != nil {
-		return nil, err
+		return nil, cleanup, err
 	}
 
-	return db, nil
+	return db, cleanup, nil
 }
 
 func runMigrate(db *sqlx.DB, cfg *config.Config) error {

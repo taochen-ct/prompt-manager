@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"strconv"
 	"strings"
 )
@@ -206,4 +208,27 @@ func (s *PromptHandler) List(c *gin.Context) {
 		return
 	}
 	response.Success(c, vo.NewPageData(vo.FromPrompts(prompts), total, offset, limit))
+}
+
+func (s *PromptHandler) ReverseProxy(target string) gin.HandlerFunc {
+	targetURL, err := url.Parse(target)
+	if err != nil {
+		panic(err)
+	}
+
+	proxy := httputil.NewSingleHostReverseProxy(targetURL)
+
+	// 覆盖 Director，固定转发路径
+	proxy.Director = func(req *http.Request) {
+		// 保留原始 method / query / body
+		req.URL.Scheme = targetURL.Scheme
+		req.URL.Host = targetURL.Host
+		req.Host = targetURL.Host
+		req.URL.Path = targetURL.Path
+	}
+
+	return func(c *gin.Context) {
+		proxy.ServeHTTP(c.Writer, c.Request)
+		c.Abort()
+	}
 }

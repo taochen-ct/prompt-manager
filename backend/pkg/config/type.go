@@ -1,11 +1,14 @@
 package config
 
+import "time"
+
 type Config struct {
 	Server struct {
 		Env       string `mapstructure:"env" yaml:"env"`
 		Port      string `mapstructure:"port" yaml:"port"`
 		ApiPrefix string `mapstructure:"apiPrefix" yaml:"apiPrefix"`
 		Storage   string `mapstructure:"storage" yaml:"storage"`
+		Buffer    int    `mapstructure:"buffer" yaml:"buffer"`
 	} `mapstructure:"server" yaml:"server"`
 	Log struct {
 		Level      string `mapstructure:"level" yaml:"level"`
@@ -24,7 +27,8 @@ type Config struct {
 		SecretKey       string `mapstructure:"secretKey" yaml:"secretKey"`
 		TokenExpireHour int    `mapstructure:"tokenExpireHour" yaml:"tokenExpireHour"`
 	} `mapstructure:"security" yaml:"security"`
-	DB DBConfig `mapstructure:"db" yaml:"db"`
+	DB    DBConfig `mapstructure:"db" yaml:"db"`
+	Proxy Proxy    `mapstructure:"proxy" yaml:"proxy"`
 }
 
 type DBConfig struct {
@@ -58,4 +62,34 @@ type PostgresConfig struct {
 	Password string `mapstructure:"password" yaml:"password"`
 	DBName   string `mapstructure:"dbname" yaml:"dbname"`
 	SSLMode  string `mapstructure:"sslmode" yaml:"sslmode"`
+}
+
+type Proxy struct {
+	Server struct {
+		Host         string        `mapstructure:"host" yaml:"host"`
+		Port         int           `mapstructure:"port" yaml:"port"`
+		ReadTimeout  time.Duration `mapstructure:"read_timeout" yaml:"read_timeout"`
+		WriteTimeout time.Duration `mapstructure:"write_timeout" yaml:"write_timeout"`
+		IdleTimeout  time.Duration `mapstructure:"idle_timeout" yaml:"idle_timeout"`
+	} `mapstructure:"server" yaml:"server"`
+
+	Limits struct {
+		NonStreamConcurrency int `mapstructure:"non_stream_concurrency" yaml:"non_stream_concurrency"`
+		StreamConcurrency    int `mapstructure:"stream_concurrency" yaml:"stream_concurrency"`
+	} `mapstructure:"limits" yaml:"limits"`
+
+	HttpClient struct {
+		MaxIdleConns        int           `mapstructure:"max_idle_conns" yaml:"max_idle_conns"`
+		MaxIdleConnsPerHost int           `mapstructure:"max_idle_conns_per_host" yaml:"max_idle_conns_per_host"`
+		MaxConnsPerHost     int           `mapstructure:"max_conns_per_host" yaml:"max_conns_per_host"`
+		IdleConnTimeout     time.Duration `mapstructure:"idle_conn_timeout" yaml:"idle_conn_timeout"`
+	} `mapstructure:"http_client" yaml:"http_client"`
+
+	Models map[string]struct {
+		Endpoints []struct {
+			Name    string `mapstructure:"name" yaml:"name"`
+			ApiBase string `mapstructure:"api_base" yaml:"api_base"`
+			ApiKey  string `mapstructure:"api_key" yaml:"api_key"`
+		} `mapstructure:"endpoints" yaml:"endpoints"`
+	} `mapstructure:"models" yaml:"models"`
 }

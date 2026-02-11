@@ -23,6 +23,7 @@ func SetupRouter(
 	categoryHandler *handler.CategoryHandler,
 	favoriteHandler *handler.FavoriteHandler,
 	recentlyUsedHandler *handler.RecentlyUsedHandler,
+	remoteLogHandler *handler.RemoteLogHandler,
 ) *gin.Engine {
 	if cfg.Server.Env == "prod" {
 		gin.SetMode(gin.ReleaseMode)
@@ -52,6 +53,7 @@ func SetupRouter(
 			response.Success(c, "pong")
 		})
 		api.GET("/prompt/content/*path", promptHandler.GetPromptByPath)
+		api.POST("/remote/log/push", remoteLogHandler.Handler)
 	}
 
 	// user api collections (公开接口不需要 JWT)
@@ -77,6 +79,7 @@ func SetupRouter(
 			promptAPI.POST("/update", promptHandler.Update)
 			promptAPI.POST("/delete/:id", promptHandler.Delete)
 			promptAPI.GET("/list", promptHandler.List)
+			promptAPI.POST("/debug", promptHandler.ReverseProxy(fmt.Sprintf("http://%s:%v/v1/chat/completions", cfg.Proxy.Server.Host, cfg.Proxy.Server.Port)))
 		}
 
 		// prompt version api
