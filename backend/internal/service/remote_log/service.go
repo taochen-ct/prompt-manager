@@ -6,6 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"go.uber.org/zap"
+	"io"
+	"net/http"
+	"net/url"
+	"regexp"
+	"strings"
 	"sync"
 	"time"
 )
@@ -38,6 +43,7 @@ type LogService struct {
 	ctx     context.Context
 	cancel  context.CancelFunc
 	logger  *zap.Logger
+	cfg     *config.Config
 }
 
 func CreateLogService(cfg *config.Config, logger *zap.Logger) (*LogService, func()) {
@@ -53,6 +59,7 @@ func CreateLogService(cfg *config.Config, logger *zap.Logger) (*LogService, func
 		ctx:     ctx,
 		cancel:  cancel,
 		logger:  logger,
+		cfg:     cfg,
 	}
 
 	s.wg.Add(1)
@@ -109,6 +116,10 @@ func (s *LogService) handle(log LogMessage) {
 	// - 写文件
 	// - 写数据库
 	// - 推送 Kafka / MQ
+	if s.cfg.Else.ScSend.Enable {
+		title := fmt.Sprintf("%s-%s", log.Level, log.Message)
+		go s.scSend(title, formatSource(log.Source))
+	}
 }
 
 func formatSource(src interface{}) string {
@@ -117,4 +128,54 @@ func formatSource(src interface{}) string {
 		return fmt.Sprintf("%v", src)
 	}
 	return string(b)
+}
+
+func (s *LogService) scSend(text string, desp string) {
+	data := url.Values{}
+	data.Set("text", text)
+	data.Set("desp", desp)
+	data.Set("channel", "8|9")
+	data.Set("noip", "1")
+
+	// 根据 sendkey 是否以 "sctp" 开头决定 API 的 URL
+	var apiUrl string
+	key := s.cfg.Else.ScSend.Key
+	if strings.HasPrefix(key, "sctp") {
+		// 使用正则表达式提取数字部分
+		re := regexp.MustCompile(`sctp(\d+)t`)
+		matches := re.FindStringSubmatch(key)
+		if len(matches) > 1 {
+			num := matches[1]
+			apiUrl = fmt.Sprintf("https://%s.push.ft07.com/send/%s.send", num, key)
+		} else {
+			s.logger.Error("Invalid sendkey format for sctp")
+			return
+		}
+	} else {
+		apiUrl = fmt.Sprintf("https://sctapi.ftqq.com/%s.send", key)
+	}
+
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", apiUrl, strings.NewReader(data.Encode()))
+	if err != nil {
+		s.logger.Error("send request create error", zap.Error(err))
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		s.logger.Error("send request error", zap.Error(err))
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		s.logger.Error("server response error", zap.Error(err))
+		return
+	}
+
+	s.logger.Info("send success", zap.String("body", string(body)))
 }

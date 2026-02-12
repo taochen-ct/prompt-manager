@@ -29,6 +29,7 @@ type Config struct {
 	} `mapstructure:"security" yaml:"security"`
 	DB    DBConfig `mapstructure:"db" yaml:"db"`
 	Proxy Proxy    `mapstructure:"proxy" yaml:"proxy"`
+	Else  Else     `mapstructure:"else" yaml:"else"`
 }
 
 type DBConfig struct {
@@ -92,4 +93,11 @@ type Proxy struct {
 			ApiKey  string `mapstructure:"api_key" yaml:"api_key"`
 		} `mapstructure:"endpoints" yaml:"endpoints"`
 	} `mapstructure:"models" yaml:"models"`
+}
+
+type Else struct {
+	ScSend struct {
+		Enable bool   `mapstructure:"enable" yaml:"enable"`
+		Key    string `mapstructure:"key" yaml:"key"`
+	} `mapstructure:"scSend" yaml:"scSend"`
 }

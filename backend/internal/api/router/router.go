@@ -79,7 +79,9 @@ func SetupRouter(
 			promptAPI.POST("/update", promptHandler.Update)
 			promptAPI.POST("/delete/:id", promptHandler.Delete)
 			promptAPI.GET("/list", promptHandler.List)
-			promptAPI.POST("/debug", promptHandler.ReverseProxy(fmt.Sprintf("http://%s:%v/v1/chat/completions", cfg.Proxy.Server.Host, cfg.Proxy.Server.Port)))
+			proxyAddr := fmt.Sprintf("http://%s:%v", cfg.Proxy.Server.Host, cfg.Proxy.Server.Port)
+			promptAPI.POST("/debug", promptHandler.ReverseProxy(proxyAddr+"/v1/chat/completions"))
+			promptAPI.POST("/models", promptHandler.ReverseProxy(proxyAddr+"/v1/models"))
 		}
 
 		// prompt version api
